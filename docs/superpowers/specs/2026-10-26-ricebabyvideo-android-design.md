@@ -135,3 +135,12 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M6 | M3 动效打磨、空态/错误态全覆盖、导出导入 | `feature/m6-polish` |
 
 每个里程碑交付后从 dev 合入 main 打 tag，作为用户"分配任务"的落点单位。
+
+## 验收记录
+
+- **2026-10-26 M0 完成**（tag `v0.0.1-M0`）：
+  - 单元测试 9/9 绿（SiteInstanceCodec 4、SiteClient 5，MockWebServer 覆盖 probe/login/拒绝/不可达）
+  - `assembleDebug`/`assembleRelease` 均 BUILD SUCCESSFUL（AGP 9.3.3 内置 Kotlin，未配置签名，release 为 unsigned）
+  - 模拟器（Pixel_9）实测：五页签渲染与切换 ✓；设置页添加站点 `ricebaby-video.pages.dev` 自动规范为 https ✓；点「测试」→ 真实部署实例返回「可连接 · 无需密码」✓；杀进程重启后站点数据持久化 ✓
+  - **未验证项**：密码鉴权 UI 路径（该部署实例 `hasAuth=false`，`Rejected/NeedPassword` 分支仅由单测覆盖，待有密码实例或 M3 桥接时实测）
+  - 过程修正：`normalizeBaseUrl` 需显式协议白名单（OkHttp HttpUrl 会把 `ftp://a.com` 宽松归一化为合法 URL，绕过检查）；M0 计划中「`/api/ping` 作健康检查」不成立（它是源延迟测量接口），已改用 `GET /api/auth`
