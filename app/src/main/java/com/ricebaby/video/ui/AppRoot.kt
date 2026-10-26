@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ricebaby.video.ui.common.PlaceholderScreen
+import com.ricebaby.video.ui.settings.SettingsScreen
 
 data class TopTab(val route: String, val label: String, val icon: ImageVector)
 
@@ -66,7 +67,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
             composable("search") { PlaceholderScreen("搜索", "即将上线：多源聚合搜索") }
             composable("watchlist") { PlaceholderScreen("待看", "即将上线：收藏与历史记录") }
             composable("live") { PlaceholderScreen("直播", "即将上线：IPTV 频道") }
-            composable("settings") { PlaceholderScreen("设置", "即将上线：站点管理") }
+            composable("settings") { SettingsScreen() }
         }
     }
 }
