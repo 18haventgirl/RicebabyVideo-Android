@@ -1,0 +1,29 @@
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+build/
+app/build/
+*/build/
+
+# Gradle / IDE
+.gradle/
+.kotlin/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing & secrets — 仓库只存源码，密钥永不入库
+*.keystore
+*.jks
+*.p12
+signing.properties
+secrets.*
+
+# Misc
+.DS_Store
+*.log
