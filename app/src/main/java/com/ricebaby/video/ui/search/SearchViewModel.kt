@@ -13,6 +13,8 @@ import com.ricebaby.video.search.SearchEvent
 import com.ricebaby.video.search.SearchHandle
 import com.ricebaby.video.search.SearchStreamClient
 import com.ricebaby.video.search.VideoItem
+import com.ricebaby.video.ui.detail.DetailPayload
+import com.ricebaby.video.ui.detail.DetailRegistry
 import com.ricebaby.video.search.hasMinimumMatch
 import com.ricebaby.video.search.relevanceScore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,6 +55,7 @@ class SearchViewModel @Inject constructor(
     private val favoriteDao: FavoriteDao,
     private val searchHistoryDao: SearchHistoryDao,
     private val streamClient: SearchStreamClient,
+    private val detailRegistry: DetailRegistry,
 ) : ViewModel() {
 
     private data class Transient(
@@ -206,4 +209,14 @@ class SearchViewModel @Inject constructor(
     fun removeHistory(query: String) = viewModelScope.launch { searchHistoryDao.remove(query) }
 
     fun clearHistory() = viewModelScope.launch { searchHistoryDao.clear() }
+
+    /** 把同名结果打包交给详情页，返回导航用的 key */
+    fun handOffToDetail(scored: ScoredVideo): String {
+        val candidates = transient.value.items.values
+            .map { it.item }
+            .filter { it.name == scored.item.name }
+            .distinctBy { it.source }
+        detailRegistry.put(scored.key, DetailPayload(scored.item, candidates))
+        return scored.key
+    }
 }

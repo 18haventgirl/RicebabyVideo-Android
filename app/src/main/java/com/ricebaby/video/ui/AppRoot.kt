@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ricebaby.video.ui.common.PlaceholderScreen
+import com.ricebaby.video.ui.detail.DetailScreen
 import com.ricebaby.video.ui.search.SearchScreen
 import com.ricebaby.video.ui.settings.SettingsScreen
 import com.ricebaby.video.ui.watchlist.WatchlistScreen
@@ -66,10 +67,19 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable("home") { PlaceholderScreen("首页", "即将上线：豆瓣标签流与为你推荐") }
-            composable("search") { SearchScreen() }
-            composable("watchlist") { WatchlistScreen() }
+            composable("search") { SearchScreen(navController = navController) }
+            composable("watchlist") { WatchlistScreen(navController = navController) }
             composable("live") { PlaceholderScreen("直播", "即将上线：IPTV 频道") }
             composable("settings") { SettingsScreen() }
+            composable(
+                route = "detail?vid={vid}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("vid") {
+                        defaultValue = ""
+                        type = androidx.navigation.NavType.StringType
+                    },
+                ),
+            ) { DetailScreen(navController = navController) }
         }
     }
 }

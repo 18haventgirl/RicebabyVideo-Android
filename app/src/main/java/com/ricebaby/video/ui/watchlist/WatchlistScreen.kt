@@ -45,7 +45,10 @@ import com.ricebaby.video.search.VideoItem
 import com.ricebaby.video.ui.common.VideoCard
 
 @Composable
-fun WatchlistScreen(viewModel: WatchlistViewModel = hiltViewModel()) {
+fun WatchlistScreen(
+    navController: androidx.navigation.NavHostController,
+    viewModel: WatchlistViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -56,15 +59,19 @@ fun WatchlistScreen(viewModel: WatchlistViewModel = hiltViewModel()) {
                 Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("历史") })
             }
             when (selectedTab) {
-                0 -> FavoritesTab(uiState.favorites, viewModel)
-                else -> HistoryTab(uiState.history, viewModel)
+                0 -> FavoritesTab(uiState.favorites, viewModel, navController)
+                else -> HistoryTab(uiState.history, viewModel, navController)
             }
         }
     }
 }
 
 @Composable
-private fun FavoritesTab(favorites: List<FavoriteEntity>, viewModel: WatchlistViewModel) {
+private fun FavoritesTab(
+    favorites: List<FavoriteEntity>,
+    viewModel: WatchlistViewModel,
+    navController: androidx.navigation.NavHostController,
+) {
     if (favorites.isEmpty()) {
         EmptyHint("还没有收藏，搜索结果里点星标")
         return
@@ -79,7 +86,10 @@ private fun FavoritesTab(favorites: List<FavoriteEntity>, viewModel: WatchlistVi
             VideoCard(
                 video = fav.toVideoItem(),
                 isFavorite = true,
-                onClick = { /* M2 接入详情页 */ },
+                onClick = {
+                    val key = viewModel.handOffFavorite(fav)
+                    navController.navigate("detail?vid=${android.net.Uri.encode(key)}")
+                },
                 onToggleFavorite = { viewModel.removeFavorite(fav.source, fav.vodId) },
             )
         }
@@ -87,7 +97,11 @@ private fun FavoritesTab(favorites: List<FavoriteEntity>, viewModel: WatchlistVi
 }
 
 @Composable
-private fun HistoryTab(history: List<HistoryEntity>, viewModel: WatchlistViewModel) {
+private fun HistoryTab(
+    history: List<HistoryEntity>,
+    viewModel: WatchlistViewModel,
+    navController: androidx.navigation.NavHostController,
+) {
     if (history.isEmpty()) {
         EmptyHint("还没有观看记录，播放后自动留在这里")
         return
@@ -96,7 +110,10 @@ private fun HistoryTab(history: List<HistoryEntity>, viewModel: WatchlistViewMod
         items(history, key = { "${it.source}:${it.vodId}" }) { entry ->
             HistoryRow(
                 entry = entry,
-                onClick = { /* M2 接入详情页并续播 */ },
+                onClick = {
+                    val key = viewModel.handOffHistory(entry)
+                    navController.navigate("detail?vid=${android.net.Uri.encode(key)}")
+                },
                 onDelete = { viewModel.removeHistory(entry.source, entry.vodId) },
             )
         }

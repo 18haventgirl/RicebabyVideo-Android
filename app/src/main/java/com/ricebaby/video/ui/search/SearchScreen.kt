@@ -43,11 +43,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import com.ricebaby.video.ui.common.VideoCard
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
+fun SearchScreen(
+    navController: NavHostController,
+    viewModel: SearchViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     // 单一数据源：字段内容即 VM 的 query，进程/页面重建后天然一致
     val input = uiState.query
@@ -175,7 +179,10 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                     VideoCard(
                         video = scored.item,
                         isFavorite = scored.key in uiState.favoriteKeys,
-                        onClick = { /* M2 接入详情页 */ },
+                        onClick = {
+                            val key = viewModel.handOffToDetail(scored)
+                            navController.navigate("detail?vid=${android.net.Uri.encode(key)}")
+                        },
                         onToggleFavorite = { viewModel.toggleFavorite(scored.item) },
                     )
                 }

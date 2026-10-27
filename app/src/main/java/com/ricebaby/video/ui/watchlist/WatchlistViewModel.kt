@@ -6,6 +6,9 @@ import com.ricebaby.video.data.db.FavoriteDao
 import com.ricebaby.video.data.db.FavoriteEntity
 import com.ricebaby.video.data.db.HistoryDao
 import com.ricebaby.video.data.db.HistoryEntity
+import com.ricebaby.video.search.VideoItem
+import com.ricebaby.video.ui.detail.DetailPayload
+import com.ricebaby.video.ui.detail.DetailRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +26,7 @@ data class WatchlistUiState(
 class WatchlistViewModel @Inject constructor(
     private val favoriteDao: FavoriteDao,
     private val historyDao: HistoryDao,
+    private val detailRegistry: DetailRegistry,
 ) : ViewModel() {
 
     val uiState: StateFlow<WatchlistUiState> =
@@ -36,5 +40,34 @@ class WatchlistViewModel @Inject constructor(
 
     fun removeHistory(source: String, vodId: String) = viewModelScope.launch {
         historyDao.remove(source, vodId)
+    }
+
+    fun handOffFavorite(fav: FavoriteEntity): String {
+        val item = VideoItem(
+            vodIdElement = kotlinx.serialization.json.JsonPrimitive(fav.vodId),
+            name = fav.name,
+            pic = fav.pic,
+            typeName = fav.typeName,
+            remarks = fav.remarks,
+            year = fav.year,
+            source = fav.source,
+            sourceDisplayName = fav.sourceName,
+        )
+        val key = "${fav.source}:${fav.vodId}"
+        detailRegistry.put(key, DetailPayload(item, listOf(item)))
+        return key
+    }
+
+    fun handOffHistory(entry: HistoryEntity): String {
+        val item = VideoItem(
+            vodIdElement = kotlinx.serialization.json.JsonPrimitive(entry.vodId),
+            name = entry.name,
+            pic = entry.pic,
+            typeName = entry.typeName,
+            source = entry.source,
+        )
+        val key = "${entry.source}:${entry.vodId}"
+        detailRegistry.put(key, DetailPayload(item, listOf(item)))
+        return key
     }
 }
