@@ -144,3 +144,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 模拟器（Pixel_9）实测：五页签渲染与切换 ✓；设置页添加站点 `ricebaby-video.pages.dev` 自动规范为 https ✓；点「测试」→ 真实部署实例返回「可连接 · 无需密码」✓；杀进程重启后站点数据持久化 ✓
   - **未验证项**：密码鉴权 UI 路径（该部署实例 `hasAuth=false`，`Rejected/NeedPassword` 分支仅由单测覆盖，待有密码实例或 M3 桥接时实测）
   - 过程修正：`normalizeBaseUrl` 需显式协议白名单（OkHttp HttpUrl 会把 `ftp://a.com` 宽松归一化为合法 URL，绕过检查）；M0 计划中「`/api/ping` 作健康检查」不成立（它是源延迟测量接口），已改用 `GET /api/auth`
+- **2026-10-27 M1 完成**（tag `v0.1.0-M1`）：
+  - 单测 21/21 绿（codec 4、SiteClient 5、订阅同步 4、评分 5、SSE 流 3）；debug/release 构建通过
+  - 模拟器实测：订阅同步 **78 个资源** ✓；SSE 搜索多源流式返回、源/类型徽章、海报网格 ✓；收藏→待看页→杀进程重启持久化 ✓；搜索历史 chip ✓
+  - 过程修正：① 新增**应用内网络代理设置**（动态 ProxySelector；模拟器直连 raw.githubusercontent 超时，spec §6 的可选代理提前落地）；② 搜索框改单一数据源（本地状态与 VM 不同步导致按钮长期禁用）；③ MainActivity 扩充 `configChanges`（Gboard 崩溃引发配置变更会整页重建）
+  - 环境教训：模拟器 Gboard 崩溃后 InputConnection 失效，`am force-stop com.google.android.inputmethod.latin` 可恢复；中文输入受阻时用 ASCII 关键词验证链路
