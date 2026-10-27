@@ -149,3 +149,4 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 模拟器实测：订阅同步 **78 个资源** ✓；SSE 搜索多源流式返回、源/类型徽章、海报网格 ✓；收藏→待看页→杀进程重启持久化 ✓；搜索历史 chip ✓
   - 过程修正：① 新增**应用内网络代理设置**（动态 ProxySelector；模拟器直连 raw.githubusercontent 超时，spec §6 的可选代理提前落地）；② 搜索框改单一数据源（本地状态与 VM 不同步导致按钮长期禁用）；③ MainActivity 扩充 `configChanges`（Gboard 崩溃引发配置变更会整页重建）
   - 环境教训：模拟器 Gboard 崩溃后 InputConnection 失效，`am force-stop com.google.android.inputmethod.latin` 可恢复；中文输入受阻时用 ASCII 关键词验证链路
+- **2026-10-27 M2 完成**（tag `v0.2.0-M2`）：DetailClient 单测 4/4 绿（成功/缺 episodes/success:false/HTTP 异常）；模拟器实测：搜索→点结果进详情（海报/元信息/简介）、同名 3+ 线路 chip 切换后剧集按源重载（含"第1集/第01集"命名差异）、选集与播放按钮联动、返回保留搜索结果 ✓
