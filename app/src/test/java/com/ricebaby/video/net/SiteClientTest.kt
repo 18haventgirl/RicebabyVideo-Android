@@ -35,12 +35,15 @@ class SiteClientTest {
     private fun baseUrl() = server.url("/").toString().removeSuffix("/")
 
     @Test
-    fun `probe 读取 hasAuth 与 premium 标志`() = runBlocking {
+    fun `probe 读取 hasAuth premium 与订阅源字段`() = runBlocking {
         server.enqueue(
-            MockResponse().setBody("""{"hasAuth":true,"hasPremiumAuth":false,"persistSession":true,"subscriptionSources":""}"""),
+            MockResponse().setBody("""{"hasAuth":true,"hasPremiumAuth":false,"persistSession":true,"subscriptionSources":"https://sub.example/a.json","iptvSources":"https://live.example.m3u"}"""),
         )
         val outcome = client.probe(baseUrl())
-        assertEquals(ProbeOutcome.Reachable(hasAuth = true, hasPremiumAuth = false), outcome)
+        assertEquals(
+            ProbeOutcome.Reachable(hasAuth = true, hasPremiumAuth = false, subscriptionSources = "https://sub.example/a.json", iptvSources = "https://live.example.m3u"),
+            outcome,
+        )
         assertEquals("/api/auth", server.takeRequest().path)
     }
 

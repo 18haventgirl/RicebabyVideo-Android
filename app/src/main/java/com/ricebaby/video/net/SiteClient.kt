@@ -13,7 +13,12 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
 sealed interface ProbeOutcome {
-    data class Reachable(val hasAuth: Boolean, val hasPremiumAuth: Boolean) : ProbeOutcome
+    data class Reachable(
+        val hasAuth: Boolean,
+        val hasPremiumAuth: Boolean,
+        val subscriptionSources: String,
+        val iptvSources: String,
+    ) : ProbeOutcome
     data class Unreachable(val reason: String) : ProbeOutcome
 }
 
@@ -27,6 +32,8 @@ sealed interface LoginOutcome {
 private data class AuthGetResponse(
     val hasAuth: Boolean = false,
     val hasPremiumAuth: Boolean = false,
+    val subscriptionSources: String = "",
+    val iptvSources: String = "",
 )
 
 @Serializable
@@ -54,7 +61,12 @@ class SiteClient @Inject constructor(
                     ProbeOutcome.Unreachable("服务返回 HTTP ${response.code}")
                 } else {
                     val body = json.decodeFromString<AuthGetResponse>(response.body?.string().orEmpty().ifBlank { "{}" })
-                    ProbeOutcome.Reachable(hasAuth = body.hasAuth, hasPremiumAuth = body.hasPremiumAuth)
+                    ProbeOutcome.Reachable(
+                        hasAuth = body.hasAuth,
+                        hasPremiumAuth = body.hasPremiumAuth,
+                        subscriptionSources = body.subscriptionSources,
+                        iptvSources = body.iptvSources,
+                    )
                 }
             }
         } catch (_: IOException) {
