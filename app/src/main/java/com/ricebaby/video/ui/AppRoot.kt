@@ -80,6 +80,19 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
                     },
                 ),
             ) { DetailScreen(navController = navController) }
+            composable(
+                route = "player?vid={vid}&ep={ep}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("vid") {
+                        defaultValue = ""
+                        type = androidx.navigation.NavType.StringType
+                    },
+                    androidx.navigation.navArgument("ep") {
+                        defaultValue = "0"
+                        type = androidx.navigation.NavType.StringType
+                    },
+                ),
+            ) { com.ricebaby.video.player.PlayerScreen(navController = navController) }
         }
     }
 }

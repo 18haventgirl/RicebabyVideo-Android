@@ -174,7 +174,15 @@ fun DetailScreen(
                             }
                         }
                         Button(
-                            onClick = { snackbarScope.launch { snackbarHostState.showSnackbar("播放器将在下一里程碑接入") } },
+                            onClick = {
+                                snackbarScope.launch {
+                                    if (viewModel.canPlay()) {
+                                        navController.navigate("player?vid=${android.net.Uri.encode(viewModel.registryKey)}&ep=${uiState.selectedEpisode}")
+                                    } else {
+                                        snackbarHostState.showSnackbar("播放器将在下一里程碑接入")
+                                    }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         ) {
                             val ep = episodes.getOrNull(uiState.selectedEpisode)

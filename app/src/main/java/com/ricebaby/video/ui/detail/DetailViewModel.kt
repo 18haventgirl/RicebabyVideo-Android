@@ -98,5 +98,9 @@ class DetailViewModel @Inject constructor(
 
     val currentTarget: VideoItem? get() = payload?.candidates?.getOrNull(_uiState.value.activeLine)
 
+    val registryKey: String get() = key
+
+    fun canPlay(): Boolean = payload != null && _uiState.value.detail != null
+
     fun episodeAt(index: Int): Episode? = _uiState.value.detail?.episodes?.getOrNull(index)
 }
