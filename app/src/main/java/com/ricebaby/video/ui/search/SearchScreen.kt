@@ -35,9 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -51,7 +49,8 @@ import com.ricebaby.video.ui.common.VideoCard
 @Composable
 fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var input by remember { mutableStateOf(uiState.query) }
+    // 单一数据源：字段内容即 VM 的 query，进程/页面重建后天然一致
+    val input = uiState.query
     val keyboard = LocalSoftwareKeyboardController.current
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -78,7 +77,6 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                         if (input.isNotEmpty()) {
                             IconButton(
                                 onClick = {
-                                    input = ""
                                     viewModel.onQueryChange("")
                                 },
                             ) {
@@ -112,7 +110,7 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
                         FilterChip(
                             selected = false,
                             onClick = {
-                                input = item
+                                viewModel.onQueryChange(item)
                                 viewModel.submit(item)
                             },
                             label = { Text(item) },
