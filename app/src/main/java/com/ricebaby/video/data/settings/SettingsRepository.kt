@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ricebaby.video.data.model.SiteInstance
@@ -24,6 +25,8 @@ class SettingsRepository @Inject constructor(
             instances = SiteInstanceCodec.decodeInstances(prefs[KEY_INSTANCES].orEmpty()),
             activeInstanceId = prefs[KEY_ACTIVE],
             passwords = SiteInstanceCodec.decodePasswords(prefs[KEY_PASSWORDS].orEmpty()),
+            proxyHost = prefs[KEY_PROXY_HOST].orEmpty(),
+            proxyPort = prefs[KEY_PROXY_PORT] ?: 0,
         )
     }
 
@@ -66,9 +69,23 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    suspend fun setProxy(host: String, port: Int) {
+        context.settingsDataStore.edit { prefs ->
+            if (host.isBlank() || port <= 0) {
+                prefs.remove(KEY_PROXY_HOST)
+                prefs.remove(KEY_PROXY_PORT)
+            } else {
+                prefs[KEY_PROXY_HOST] = host.trim()
+                prefs[KEY_PROXY_PORT] = port
+            }
+        }
+    }
+
     companion object {
         private val KEY_INSTANCES = stringPreferencesKey("instances")
         private val KEY_ACTIVE = stringPreferencesKey("active_instance_id")
         private val KEY_PASSWORDS = stringPreferencesKey("passwords")
+        private val KEY_PROXY_HOST = stringPreferencesKey("proxy_host")
+        private val KEY_PROXY_PORT = intPreferencesKey("proxy_port")
     }
 }
