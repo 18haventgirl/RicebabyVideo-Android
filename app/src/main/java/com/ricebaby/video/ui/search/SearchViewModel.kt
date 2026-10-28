@@ -50,6 +50,7 @@ data class SearchUiState(
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
+    savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val settingsRepository: SettingsRepository,
     private val sourceDao: SourceDao,
     private val favoriteDao: FavoriteDao,
@@ -70,6 +71,14 @@ class SearchViewModel @Inject constructor(
 
     private val transient = MutableStateFlow(Transient())
     private var handle: SearchHandle? = null
+
+    init {
+        val prefill = savedStateHandle.get<String>("q")
+        if (!prefill.isNullOrBlank()) {
+            onQueryChange(prefill)
+            submit(prefill)
+        }
+    }
 
     val uiState: StateFlow<SearchUiState> = combine(
         searchHistoryDao.observeRecent(),
