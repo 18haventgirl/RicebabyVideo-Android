@@ -91,6 +91,7 @@ private fun FavoritesTab(
                     navController.navigate("detail?vid=${android.net.Uri.encode(key)}")
                 },
                 onToggleFavorite = { viewModel.removeFavorite(fav.source, fav.vodId) },
+                modifier = Modifier.animateItem(),
             )
         }
     }

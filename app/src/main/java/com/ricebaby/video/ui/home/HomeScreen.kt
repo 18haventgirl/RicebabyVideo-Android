@@ -97,9 +97,11 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 items(uiState.items, key = { it.id }) { item ->
-                    DoubanCard(item = item, onClick = {
-                        navController.navigate("search?q=${android.net.Uri.encode(item.title)}")
-                    })
+                    DoubanCard(
+                        item = item,
+                        modifier = Modifier.animateItem(),
+                        onClick = { navController.navigate("search?q=${android.net.Uri.encode(item.title)}") },
+                    )
                 }
             }
         }
@@ -107,8 +109,8 @@ fun HomeScreen(
 }
 
 @Composable
-private fun DoubanCard(item: DoubanItem, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+private fun DoubanCard(item: DoubanItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Box {
             AsyncImage(
                 model = item.cover,

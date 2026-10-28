@@ -71,6 +71,19 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
             navController = navController,
             startDestination = "home",
             modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) +
+                    androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(280)) { it / 8 }
+            },
+            exitTransition = { androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(140)) },
+            popEnterTransition = {
+                androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) +
+                    androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(280)) { -it / 8 }
+            },
+            popExitTransition = {
+                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(140)) +
+                    androidx.compose.animation.slideOutHorizontally(androidx.compose.animation.core.tween(280)) { it / 8 }
+            },
         ) {
             composable("home") { HomeScreen(navController = navController) }
             composable(

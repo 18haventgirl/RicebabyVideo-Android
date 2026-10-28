@@ -184,6 +184,7 @@ fun SearchScreen(
                             navController.navigate("detail?vid=${android.net.Uri.encode(key)}")
                         },
                         onToggleFavorite = { viewModel.toggleFavorite(scored.item) },
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
