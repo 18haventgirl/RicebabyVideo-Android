@@ -24,6 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import com.ricebaby.video.ui.common.PlaceholderScreen
 import com.ricebaby.video.ui.detail.DetailScreen
 import com.ricebaby.video.ui.home.HomeScreen
+import com.ricebaby.video.ui.live.IptvPlayerScreen
+import com.ricebaby.video.ui.live.LiveScreen
 import com.ricebaby.video.ui.search.SearchScreen
 import com.ricebaby.video.ui.settings.SettingsScreen
 import com.ricebaby.video.ui.watchlist.WatchlistScreen
@@ -81,7 +83,17 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
                 ),
             ) { SearchScreen(navController = navController) }
             composable("watchlist") { WatchlistScreen(navController = navController) }
-            composable("live") { PlaceholderScreen("直播", "即将上线：IPTV 频道") }
+            composable("live") { LiveScreen(navController = navController) }
+            composable(
+                route = "liveplayer?url={url}&name={name}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("url") { type = androidx.navigation.NavType.StringType },
+                    androidx.navigation.navArgument("name") {
+                        defaultValue = ""
+                        type = androidx.navigation.NavType.StringType
+                    },
+                ),
+            ) { IptvPlayerScreen(navController = navController) }
             composable("settings") { SettingsScreen() }
             composable(
                 route = "detail?vid={vid}",
