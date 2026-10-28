@@ -96,8 +96,8 @@ class PlayerViewModel @Inject constructor(
 
                 val webHistory = BridgeCodec.parseWebHistory(historyRaw)
                 if (webHistory.isNotEmpty()) {
-                    BridgeCodec.mergeHistory(webHistory, historyDao.observeAll().first())
-                        .forEach { historyDao.upsert(it) }
+                    val merged = BridgeCodec.mergeHistory(webHistory, historyDao.observeAll().first())
+                    merged.forEach { historyDao.upsert(it) }
                 }
                 val webFavorites = BridgeCodec.parseWebFavorites(favoritesRaw)
                 if (webFavorites.isNotEmpty()) {
@@ -105,7 +105,6 @@ class PlayerViewModel @Inject constructor(
                         .forEach { favoriteDao.upsert(it) }
                 }
             }
-            .onFailure { }
         }
     }
 

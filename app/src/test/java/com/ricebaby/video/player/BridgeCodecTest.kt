@@ -43,7 +43,7 @@ class BridgeCodecTest {
         )
         val root = json.parseToJsonElement(BridgeCodec.historyJson(listOf(history))).jsonObject
         assertEquals(2, root["version"]!!.jsonPrimitive.int)
-        val item = root["state"]!!.jsonObject["history"]!!.jsonArray[0].jsonObject
+        val item = root["state"]!!.jsonObject["viewingHistory"]!!.jsonArray[0].jsonObject
         assertEquals("title:测试片", item["showIdentifier"]!!.jsonPrimitive.content)
         assertEquals(2, item["episodeIndex"]!!.jsonPrimitive.int)
         assertEquals(5000, item["playbackPosition"]!!.jsonPrimitive.long)
@@ -80,7 +80,7 @@ class BridgeCodecTest {
 
     @Test
     fun `回读解析 正常与坏数据`() {
-        val raw = """{"state":{"history":[{"videoId":88,"title":"片A","source":"s1","episodeIndex":1,"playbackPosition":100,"duration":900,"timestamp":555,"poster":null}]},"version":2}"""
+        val raw = """{"state":{"viewingHistory":[{"videoId":88,"title":"片A","source":"s1","episodeIndex":1,"playbackPosition":100,"duration":900,"timestamp":555,"poster":null}]},"version":2}"""
         val parsed = BridgeCodec.parseWebHistory(raw)
         assertEquals(1, parsed.size)
         assertEquals("88", parsed[0].videoId)

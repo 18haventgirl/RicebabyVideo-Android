@@ -105,7 +105,7 @@ object BridgeCodec {
             },
         )
         val root = buildMap<String, JsonElement> {
-            put("state", JsonObject(mapOf("history" to array)))
+            put("state", JsonObject(mapOf("viewingHistory" to array)))
             put("version", JsonPrimitive(2))
         }
         return json.encodeToString(JsonObject(root))
@@ -158,7 +158,7 @@ object BridgeCodec {
 
     fun parseWebHistory(rawJson: String?): List<WebHistoryItem> = runCatching {
         json.parseToJsonElement(rawJson ?: return emptyList())
-            .jsonObject["state"]?.jsonObject?.get("history")?.jsonArray
+            .jsonObject["state"]?.jsonObject?.let { (it["viewingHistory"] ?: it["history"])?.jsonArray }
             ?.mapNotNull { el ->
                 runCatching {
                     val o = el.jsonObject
