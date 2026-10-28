@@ -113,21 +113,25 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     FilledTonalButton(onClick = viewModel::syncSources) { Text("同步资源") }
                 }
             }
-            BackupCard(
-                message = uiState.backupMessage,
-                onExport = { viewModel.exportBackup { uri -> pendingExport = uri; exportLauncher.launch("ricebaby-backup.json") } },
-                onImport = { importLauncher.launch(arrayOf("application/json")) },
-            )
-            ProxyCard(
-                proxyHost = uiState.settings.proxyHost,
-                proxyPort = uiState.settings.proxyPort,
-                message = uiState.proxyMessage,
-                onSave = viewModel::saveProxy,
-            )
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                item {
+                    BackupCard(
+                        message = uiState.backupMessage,
+                        onExport = { viewModel.exportBackup { uri -> pendingExport = uri; exportLauncher.launch("ricebaby-backup.json") } },
+                        onImport = { importLauncher.launch(arrayOf("application/json")) },
+                    )
+                }
+                item {
+                    ProxyCard(
+                        proxyHost = uiState.settings.proxyHost,
+                        proxyPort = uiState.settings.proxyPort,
+                        message = uiState.proxyMessage,
+                        onSave = viewModel::saveProxy,
+                    )
+                }
                 if (uiState.settings.instances.isEmpty()) {
                     item {
                         Text(
