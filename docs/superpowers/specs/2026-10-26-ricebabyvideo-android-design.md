@@ -154,3 +154,6 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 关键根因修复：① WebView 默认 UA 含 "; wv" 被 Cloudflare 反爬拦截返回假页面（白屏真凶）；② Web 端 history store 的 state 字段名是 `viewingHistory`（CDP 实测），非直觉的 `history`——注入与回读两端已对齐
   - **已知问题（M6 处理）**：① 历史条目进度值显示为 0（Web 端 playbackPosition/duration 单位为秒，且首条写入与进度更新存在时序差）；② Web 端取消收藏不会回删 App 收藏（并集策略，spec §5.3 有意为之）；③ 系统级全屏按钮依赖 onShowCustomView，模拟器未实测
 - **2026-10-28 M4 完成**（tag `v0.4.0-M4`）：DoubanRepository/RecommendTagMapper 单测 5/5 绿；模拟器实测：首页标签流加载（评分角标、电影/剧集切换）✓、点卡片直达搜索并自动出结果 ✓；「为你推荐」按 ≥2 部历史规则正确隐藏（当前仅 1 条历史）
+- **2026-10-28 M5 完成**（tag `v0.5.0-M5`）：M3uParser 单测 4/4；模拟器实测：站点代理拉取 m3u（76KB）→ 分组列表（卫视频道 37 个等）✓、搜索框 ✓、点频道进 ExoPlayer 播放页（PlayerView 挂载、频道名标题、错误提示）✓
+  - 已知限制：站点当前 IPTV 源（live.zhi35.com 央视频道）为区域专网源，站点代理取流返回 Upstream 403——Web 端同路径同样不可播，非 App 缺陷；换公共 m3u 源即可播放
+  - 架构偏差记录：IPTV 播放采用 Media3 ExoPlayer（spec §2 原计划播放器一律 WebView，但站点 /player 仅支持 CMS id+source 流程，无法承载直连流；点播播放器不受影响）
