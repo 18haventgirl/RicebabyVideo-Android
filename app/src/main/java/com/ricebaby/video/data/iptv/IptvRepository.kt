@@ -42,7 +42,8 @@ class IptvRepository @Inject constructor(
                             failed += src
                             return@use
                         }
-                        val parsed = M3uParser.parse(response.body?.string().orEmpty())
+                        val text = response.body?.string().orEmpty()
+                        val parsed = M3uParser.parse(text)
                         parsed.forEach { if (seen.add("${it.name}|${it.url}")) channels += it }
                     }
                 } catch (_: IOException) {
