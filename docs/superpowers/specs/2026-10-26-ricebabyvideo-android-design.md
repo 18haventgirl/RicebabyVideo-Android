@@ -153,3 +153,4 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 - **2026-10-28 M3 完成**（tag `v0.3.0-M3`）：BridgeCodec 单测 9/9 绿（注入格式/回读解析/合并规则/脏数据）；模拟器实测：播放器真实起播（CDP 确认 video 元素 currentTime 90s、非暂停）、周期回读命中（webHistory=1→merged→upserted）、退出后待看历史持久化 ✓
   - 关键根因修复：① WebView 默认 UA 含 "; wv" 被 Cloudflare 反爬拦截返回假页面（白屏真凶）；② Web 端 history store 的 state 字段名是 `viewingHistory`（CDP 实测），非直觉的 `history`——注入与回读两端已对齐
   - **已知问题（M6 处理）**：① 历史条目进度值显示为 0（Web 端 playbackPosition/duration 单位为秒，且首条写入与进度更新存在时序差）；② Web 端取消收藏不会回删 App 收藏（并集策略，spec §5.3 有意为之）；③ 系统级全屏按钮依赖 onShowCustomView，模拟器未实测
+- **2026-10-28 M4 完成**（tag `v0.4.0-M4`）：DoubanRepository/RecommendTagMapper 单测 5/5 绿；模拟器实测：首页标签流加载（评分角标、电影/剧集切换）✓、点卡片直达搜索并自动出结果 ✓；「为你推荐」按 ≥2 部历史规则正确隐藏（当前仅 1 条历史）
