@@ -157,3 +157,4 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 - **2026-10-28 M5 完成**（tag `v0.5.0-M5`）：M3uParser 单测 4/4；模拟器实测：站点代理拉取 m3u（76KB）→ 分组列表（卫视频道 37 个等）✓、搜索框 ✓、点频道进 ExoPlayer 播放页（PlayerView 挂载、频道名标题、错误提示）✓
   - 已知限制：站点当前 IPTV 源（live.zhi35.com 央视频道）为区域专网源，站点代理取流返回 Upstream 403——Web 端同路径同样不可播，非 App 缺陷；换公共 m3u 源即可播放
   - 架构偏差记录：IPTV 播放采用 Media3 ExoPlayer（spec §2 原计划播放器一律 WebView，但站点 /player 仅支持 CMS id+source 流程，无法承载直连流；点播播放器不受影响）
+- **2026-10-28 M6 完成**（tag `v0.6.0-M6`，全量 45 单测绿）：进度单位秒↔毫秒双向换算修复；页面转场与列表项动画；数据备份导出/导入（SAF + FileProvider，模拟器实测保存对话框正常）；设置页布局溢出修复（备份/代理卡移入滚动列表）；README 补齐
