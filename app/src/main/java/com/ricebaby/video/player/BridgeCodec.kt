@@ -96,8 +96,8 @@ object BridgeCodec {
                     put("episodeIndex", JsonPrimitive(h.episodeIndex))
                     put("source", JsonPrimitive(h.source))
                     put("timestamp", JsonPrimitive(h.updatedAt))
-                    put("playbackPosition", JsonPrimitive(h.positionMs))
-                    put("duration", JsonPrimitive(h.durationMs))
+                    put("playbackPosition", JsonPrimitive(h.positionMs / 1000))
+                    put("duration", JsonPrimitive(h.durationMs / 1000))
                     put("poster", if (h.pic != null) JsonPrimitive(h.pic) else JsonNull)
                     put("episodes", JsonArray(emptyList()))
                     put("showIdentifier", JsonPrimitive("title:${h.name.lowercase().trim()}"))
@@ -167,8 +167,9 @@ object BridgeCodec {
                         title = o["title"].str(),
                         source = o["source"].str(),
                         episodeIndex = o["episodeIndex"]?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
-                        playbackPosition = o["playbackPosition"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
-                        duration = o["duration"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
+                        // Web 端 video.currentTime 单位为秒，Room 统一存毫秒
+                        playbackPosition = secondsToMillis(o["playbackPosition"]?.jsonPrimitive?.content),
+                        duration = secondsToMillis(o["duration"]?.jsonPrimitive?.content),
                         timestamp = o["timestamp"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0,
                         poster = o["poster"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.content,
                     )
@@ -242,6 +243,9 @@ object BridgeCodec {
         }
         return byKey.values.toList()
     }
+
+    private fun secondsToMillis(raw: String?): Long =
+        ((raw?.toDoubleOrNull() ?: 0.0) * 1000).toLong()
 
     private fun JsonElement?.str(): String =
         this?.takeIf { it !is JsonNull }?.jsonPrimitive?.content.orEmpty()
