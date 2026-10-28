@@ -13,6 +13,7 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,8 +44,7 @@ import androidx.navigation.NavHostController
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebViewCompat
 
-private const val SYNC_JS =
-    "JSON.stringify({h:localStorage.getItem('ricebabyvideo-history-store')," +
+private const val SYNC_JS =    "JSON.stringify({h:localStorage.getItem('ricebabyvideo-history-store')," +
         "f:localStorage.getItem('ricebabyvideo-favorites-store')})"
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -58,6 +58,7 @@ fun PlayerScreen(
     var webView by remember { mutableStateOf<WebView?>(null) }
     var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var crashed by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val activity = context as? Activity
@@ -112,14 +113,32 @@ fun PlayerScreen(
             }
         }
 
-        if (state.ready) {
+        if (state.ready && !crashed) {
             AndroidWebView(
                 state = state,
                 onCreated = { webView = it; loading = true },
                 onLoaded = { loading = false },
                 onFullscreen = { view, callback -> fullscreen = view to callback },
                 onExitFullscreen = { fullscreen = null },
+                onRenderCrashed = {
+                    syncNow()
+                    webView?.destroy()
+                    webView = null
+                    crashed = true
+                },
             )
+        }
+        if (crashed) {
+            Column(
+                modifier = Modifier.align(Alignment.Center).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("播放器意外停止", color = Color.White)
+                androidx.compose.material3.TextButton(onClick = {
+                    crashed = false
+                    loading = true
+                }) { Text("重试", color = MaterialTheme.colorScheme.primary) }
+            }
         }
 
         fullscreen?.let { (view, _) ->
@@ -172,16 +191,22 @@ private fun AndroidWebView(
     onLoaded: () -> Unit,
     onFullscreen: (View, WebChromeClient.CustomViewCallback) -> Unit,
     onExitFullscreen: () -> Unit,
+    onRenderCrashed: () -> Unit,
 ) {
     val context = LocalContext.current
     AndroidView(
         factory = {
             WebView(context).apply {
+                if (android.os.Build.VERSION.SDK_INT >= 30 || context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+                    WebView.setWebContentsDebuggingEnabled(true)
+                }
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false
                 settings.useWideViewPort = true
                 settings.loadWithOverviewMode = true
+                // Cloudflare 会拦截带 "; wv" 标记的 WebView 默认 UA，返回反爬页而非站点
+                settings.userAgentString = android.webkit.WebSettings.getDefaultUserAgent(context).replace("; wv", "")
                 settings.cacheMode = WebSettings.LOAD_DEFAULT
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -189,6 +214,12 @@ private fun AndroidWebView(
                         return !request.url.toString().startsWith(state.origin)
                     }
                     override fun onPageFinished(view: WebView, url: String?) = onLoaded()
+
+                    override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
+                        // 渲染进程死亡必须自行销毁 WebView，否则宿主进程随之崩溃
+                        onRenderCrashed()
+                        return true
+                    }
                 }
                 webChromeClient = object : WebChromeClient() {
                     override fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback) {

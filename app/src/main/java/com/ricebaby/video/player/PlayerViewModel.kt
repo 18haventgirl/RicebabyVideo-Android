@@ -105,7 +105,7 @@ class PlayerViewModel @Inject constructor(
                         .forEach { favoriteDao.upsert(it) }
                 }
             }
-            // 解析失败静默跳过：本地数据绝不被破坏（spec §5.3 红线）
+            .onFailure { }
         }
     }
 
