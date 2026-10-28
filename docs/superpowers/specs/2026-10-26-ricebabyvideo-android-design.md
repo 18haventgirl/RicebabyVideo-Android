@@ -150,3 +150,6 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 过程修正：① 新增**应用内网络代理设置**（动态 ProxySelector；模拟器直连 raw.githubusercontent 超时，spec §6 的可选代理提前落地）；② 搜索框改单一数据源（本地状态与 VM 不同步导致按钮长期禁用）；③ MainActivity 扩充 `configChanges`（Gboard 崩溃引发配置变更会整页重建）
   - 环境教训：模拟器 Gboard 崩溃后 InputConnection 失效，`am force-stop com.google.android.inputmethod.latin` 可恢复；中文输入受阻时用 ASCII 关键词验证链路
 - **2026-10-27 M2 完成**（tag `v0.2.0-M2`）：DetailClient 单测 4/4 绿（成功/缺 episodes/success:false/HTTP 异常）；模拟器实测：搜索→点结果进详情（海报/元信息/简介）、同名 3+ 线路 chip 切换后剧集按源重载（含"第1集/第01集"命名差异）、选集与播放按钮联动、返回保留搜索结果 ✓
+- **2026-10-28 M3 完成**（tag `v0.3.0-M3`）：BridgeCodec 单测 9/9 绿（注入格式/回读解析/合并规则/脏数据）；模拟器实测：播放器真实起播（CDP 确认 video 元素 currentTime 90s、非暂停）、周期回读命中（webHistory=1→merged→upserted）、退出后待看历史持久化 ✓
+  - 关键根因修复：① WebView 默认 UA 含 "; wv" 被 Cloudflare 反爬拦截返回假页面（白屏真凶）；② Web 端 history store 的 state 字段名是 `viewingHistory`（CDP 实测），非直觉的 `history`——注入与回读两端已对齐
+  - **已知问题（M6 处理）**：① 历史条目进度值显示为 0（Web 端 playbackPosition/duration 单位为秒，且首条写入与进度更新存在时序差）；② Web 端取消收藏不会回删 App 收藏（并集策略，spec §5.3 有意为之）；③ 系统级全屏按钮依赖 onShowCustomView，模拟器未实测
