@@ -57,6 +57,13 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    suspend fun restoreInstances(instances: List<SiteInstance>, activeId: String?) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[KEY_INSTANCES] = SiteInstanceCodec.encodeInstances(instances)
+            if (activeId != null) prefs[KEY_ACTIVE] = activeId else prefs.remove(KEY_ACTIVE)
+        }
+    }
+
     suspend fun setActive(id: String) {
         context.settingsDataStore.edit { prefs -> prefs[KEY_ACTIVE] = id }
     }

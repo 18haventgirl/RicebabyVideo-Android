@@ -21,6 +21,9 @@ interface SourceDao {
 
     @Query("DELETE FROM video_sources WHERE subscriptionUrl = :url")
     suspend fun deleteBySubscription(url: String)
+
+    @Query("DELETE FROM video_sources")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -33,6 +36,12 @@ interface FavoriteDao {
 
     @Query("DELETE FROM favorites WHERE source = :source AND vodId = :vodId")
     suspend fun remove(source: String, vodId: String)
+
+    @Query("DELETE FROM favorites")
+    suspend fun clearAll()
+
+    @Upsert
+    suspend fun upsertAll(favorites: List<FavoriteEntity>)
 }
 
 @Dao
@@ -45,6 +54,12 @@ interface HistoryDao {
 
     @Query("DELETE FROM history WHERE source = :source AND vodId = :vodId")
     suspend fun remove(source: String, vodId: String)
+
+    @Query("DELETE FROM history")
+    suspend fun clearAll()
+
+    @Upsert
+    suspend fun upsertAll(entries: List<HistoryEntity>)
 }
 
 @Dao
@@ -60,4 +75,7 @@ interface SearchHistoryDao {
 
     @Query("DELETE FROM search_history")
     suspend fun clear()
+
+    @Upsert
+    suspend fun upsertAll(entries: List<SearchHistoryEntity>)
 }

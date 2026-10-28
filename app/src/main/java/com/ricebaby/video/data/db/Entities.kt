@@ -2,6 +2,7 @@ package com.ricebaby.video.data.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 @Entity(tableName = "video_sources")
 data class VideoSourceEntity(
@@ -15,6 +16,7 @@ data class VideoSourceEntity(
     val updatedAt: Long = 0,
 )
 
+@Serializable
 @Entity(tableName = "favorites", primaryKeys = ["source", "vodId"])
 data class FavoriteEntity(
     val source: String,
@@ -29,6 +31,7 @@ data class FavoriteEntity(
 )
 
 @Entity(tableName = "history", primaryKeys = ["source", "vodId"])
+@Serializable
 data class HistoryEntity(
     val source: String,
     val vodId: String,
@@ -43,6 +46,7 @@ data class HistoryEntity(
 )
 
 @Entity(tableName = "search_history")
+@Serializable
 data class SearchHistoryEntity(
     @PrimaryKey val query: String,
     val updatedAt: Long,

@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +41,24 @@ import com.ricebaby.video.data.model.SiteInstance
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var pendingExport by remember { mutableStateOf<android.net.Uri?>(null) }
+    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
+    ) { target ->
+        val src = pendingExport
+        if (src != null && target != null) {
+            runCatching {
+                context.contentResolver.openOutputStream(target)?.use { out ->
+                    context.contentResolver.openInputStream(src)?.use { it.copyTo(out) }
+                }
+            }
+        }
+        pendingExport = null
+    }
+    val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri -> uri?.let(viewModel::importBackup) }
     var showAddDialog by remember { mutableStateOf(false) }
     var passwordTarget by remember { mutableStateOf<SiteInstance?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -94,6 +113,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     FilledTonalButton(onClick = viewModel::syncSources) { Text("同步资源") }
                 }
             }
+            BackupCard(
+                message = uiState.backupMessage,
+                onExport = { viewModel.exportBackup { uri -> pendingExport = uri; exportLauncher.launch("ricebaby-backup.json") } },
+                onImport = { importLauncher.launch(arrayOf("application/json")) },
+            )
             ProxyCard(
                 proxyHost = uiState.settings.proxyHost,
                 proxyPort = uiState.settings.proxyPort,
@@ -203,6 +227,27 @@ private fun InstanceCard(
                 TextButton(onClick = onDelete) {
                     Icon(Icons.Outlined.Delete, contentDescription = null)
                     Text("删除", modifier = Modifier.padding(start = 4.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BackupCard(message: String?, onExport: () -> Unit, onImport: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("数据备份", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "站点、资源、收藏与观看记录可导出为 JSON 文件，重装后一键恢复。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onExport) { Text("导出备份") }
+                TextButton(onClick = onImport) { Text("导入恢复") }
+                message?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

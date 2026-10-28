@@ -1,7 +1,12 @@
 package com.ricebaby.video.ui.settings
 
+import android.content.Context
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ricebaby.video.data.backup.BackupCodec
+import com.ricebaby.video.data.backup.BackupRepository
 import com.ricebaby.video.data.db.SourceDao
 import com.ricebaby.video.data.settings.AppSettings
 import com.ricebaby.video.data.settings.SettingsRepository
@@ -29,6 +34,7 @@ data class SettingsUiState(
     val sourceCount: Int = 0,
     val syncMessage: String? = null,
     val proxyMessage: String? = null,
+    val backupMessage: String? = null,
 )
 
 @HiltViewModel
@@ -37,6 +43,8 @@ class SettingsViewModel @Inject constructor(
     private val siteClient: SiteClient,
     private val syncer: SubscriptionSyncer,
     sourceDao: SourceDao,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: Context,
+    private val backupRepository: BackupRepository,
 ) : ViewModel() {
 
     private val transient = MutableStateFlow(SettingsUiState())
@@ -120,6 +128,34 @@ class SettingsViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun exportBackup(onUriReady: (Uri) -> Unit) = viewModelScope.launch {
+        runCatching {
+            val payload = backupRepository.collectPayload()
+            val dir = java.io.File(appContext.cacheDir, "backups").apply { mkdirs() }
+            val file = java.io.File(dir, "ricebaby-backup.json")
+            file.writeText(BackupCodec.serialize(payload))
+            FileProvider.getUriForFile(appContext, appContext.packageName + ".fileprovider", file)
+        }.onSuccess { uri ->
+            transient.value = transient.value.copy(backupMessage = "备份已生成，选择保存位置")
+            onUriReady(uri)
+        }.onFailure {
+            transient.value = transient.value.copy(backupMessage = "备份失败：${it.message}")
+        }
+    }
+
+    fun importBackup(uri: Uri) = viewModelScope.launch {
+        runCatching {
+            val text = appContext.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                ?: error("无法读取文件")
+            val payload = BackupCodec.deserialize(text) ?: error("文件格式不正确")
+            val count = backupRepository.applyPayload(payload)
+            "已恢复 $count 条收藏与记录"
+        }.fold(
+            onSuccess = { transient.value = transient.value.copy(backupMessage = it) },
+            onFailure = { transient.value = transient.value.copy(backupMessage = "恢复失败：${it.message}") },
+        )
     }
 
     private fun setStatus(id: String, status: TestStatus, detail: String?) {

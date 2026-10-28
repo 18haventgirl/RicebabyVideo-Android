@@ -22,6 +22,7 @@ class FakeSourceDao : SourceDao {
     override fun observeCount(): Flow<Int> = throw UnsupportedOperationException()
     override suspend fun upsertAll(sources: List<VideoSourceEntity>) { sources.forEach { stored[it.id] = it } }
     override suspend fun deleteBySubscription(url: String) { stored.values.removeAll { it.subscriptionUrl == url } }
+    override suspend fun clearAll() { stored.clear() }
 }
 
 class SubscriptionSyncerTest {
