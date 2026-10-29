@@ -41,6 +41,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ricebaby.video.ui.theme.Dimens
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -79,19 +82,19 @@ fun DetailScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.lg)) {
                 AsyncImage(
                     model = uiState.poster,
                     contentDescription = uiState.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .width(96.dp)
+                        .width(120.dp)
                         .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(Dimens.posterCorner))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(uiState.title, style = MaterialTheme.typography.titleLarge)
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(uiState.title, style = MaterialTheme.typography.titleLarge, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     uiState.detail?.let { d ->
                         Text(
                             listOfNotNull(
@@ -125,16 +128,21 @@ fun DetailScreen(
                         maxLines = if (expanded) Int.MAX_VALUE else 4,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Button(
-                        onClick = { expanded = !expanded },
-                        modifier = Modifier.align(Alignment.End),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    ) { Text(if (expanded) "收起" else "展开") }
+                    Text(
+                        if (expanded) "收起" else "展开全部",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clip(RoundedCornerShape(Dimens.sm))
+                            .clickable { expanded = !expanded }
+                            .padding(horizontal = Dimens.sm, vertical = 2.dp),
+                    )
                 }
             }
 
             if (uiState.lines.size > 1) {
-                Text("线路", style = MaterialTheme.typography.titleSmall)
+                Text("线路", style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     uiState.lines.forEachIndexed { index, line ->
                         FilterChip(
@@ -163,14 +171,27 @@ fun DetailScreen(
                     if (episodes.isEmpty()) {
                         Text("该线路暂无可选剧集，试试切换线路", style = MaterialTheme.typography.bodyMedium)
                     } else {
-                        Text("选集", style = MaterialTheme.typography.titleSmall)
+                        Text("选集", style = MaterialTheme.typography.titleMedium)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             episodes.forEachIndexed { index, episode ->
-                                FilterChip(
-                                    selected = index == uiState.selectedEpisode,
-                                    onClick = { viewModel.selectEpisode(index) },
-                                    label = { Text(episode.name) },
-                                )
+                                val selected = index == uiState.selectedEpisode
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(Dimens.pillCorner))
+                                        .background(
+                                            if (selected) MaterialTheme.colorScheme.primaryContainer
+                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        )
+                                        .clickable { viewModel.selectEpisode(index) }
+                                        .padding(horizontal = Dimens.md, vertical = 7.dp),
+                                ) {
+                                    Text(
+                                        episode.name,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                         Button(
@@ -183,10 +204,11 @@ fun DetailScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(Dimens.pillCorner),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.md).height(52.dp),
                         ) {
                             val ep = episodes.getOrNull(uiState.selectedEpisode)
-                            Text(if (ep != null) "播放 · ${ep.name}" else "播放")
+                            Text(if (ep != null) "播放 · ${ep.name}" else "播放", style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }

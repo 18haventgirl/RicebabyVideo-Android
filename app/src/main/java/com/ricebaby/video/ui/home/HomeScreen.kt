@@ -1,23 +1,22 @@
 package com.ricebaby.video.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,14 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil3.compose.AsyncImage
-import com.ricebaby.video.data.douban.DoubanItem
+import com.ricebaby.video.ui.components.PosterItem
+import com.ricebaby.video.ui.components.PosterSkeleton
+import com.ricebaby.video.ui.theme.Dimens
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -60,83 +59,113 @@ fun HomeScreen(
 
     Scaffold { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = !uiState.isTv,
-                    onClick = { viewModel.setType(false) },
-                    label = { Text("电影") },
-                )
-                FilterChip(
-                    selected = uiState.isTv,
-                    onClick = { viewModel.setType(true) },
-                    label = { Text("剧集") },
-                )
-            }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                uiState.tags.forEach { tag ->
-                    FilterChip(
-                        selected = tag == uiState.activeTag,
-                        onClick = { viewModel.setTag(tag) },
-                        label = { Text(tag) },
-                    )
+            Text(
+                "米宝影视",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(start = Dimens.xl, end = Dimens.xl, top = Dimens.md, bottom = Dimens.md),
+            )
+
+            // 电影 / 剧集：Apple segmented 风格
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = Dimens.xl)
+                    .clip(RoundedCornerShape(Dimens.md))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                listOf(false to "电影", true to "剧集").forEach { (tv, label) ->
+                    val selected = uiState.isTv == tv
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(if (selected) MaterialTheme.colorScheme.surface else Color.Transparent)
+                            .clickable { viewModel.setType(tv) }
+                            .padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (selected) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
-            uiState.error?.let {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
-                    Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            if (uiState.tags.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    modifier = Modifier.padding(horizontal = Dimens.xl, vertical = Dimens.lg),
+                ) {
+                    uiState.tags.forEach { tag ->
+                        val selected = tag == uiState.activeTag
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(Dimens.pillCorner))
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                )
+                                .clickable { viewModel.setTag(tag) }
+                                .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
+                        ) {
+                            Text(
+                                tag,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
+
             LazyVerticalGrid(
                 state = gridState,
-                columns = GridCells.Adaptive(120.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                columns = GridCells.Adaptive(116.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.md),
+                verticalArrangement = Arrangement.spacedBy(Dimens.lg),
+                contentPadding = PaddingValues(start = Dimens.xl, end = Dimens.xl, bottom = 96.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
+                if (uiState.items.isEmpty() && uiState.loading) {
+                    items((1..8).toList(), key = { "sk-$it" }) {
+                        PosterSkeleton(modifier = Modifier.animateItem())
+                    }
+                }
+                if (uiState.items.isEmpty() && !uiState.loading && uiState.error != null) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            uiState.error!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = Dimens.xxl),
+                        )
+                    }
+                }
                 items(uiState.items, key = { it.id }) { item ->
-                    DoubanCard(
-                        item = item,
+                    PosterItem(
+                        title = item.title,
+                        imageUrl = item.cover,
                         modifier = Modifier.animateItem(),
-                        onClick = { navController.navigate("search?q=${android.net.Uri.encode(item.title)}") },
+                        cornerBadge = item.rate.takeIf { it.isNotBlank() },
+                        onClick = {
+                            navController.navigate("search?q=${android.net.Uri.encode(item.title)}")
+                        },
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DoubanCard(item: DoubanItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
-        Box {
-            AsyncImage(
-                model = item.cover,
-                contentDescription = item.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-            )
-            if (item.rate.isNotBlank()) {
-                Text(
-                    item.rate,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color.Black.copy(alpha = 0.55f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
-        }
-        Text(
-            item.title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-        )
     }
 }

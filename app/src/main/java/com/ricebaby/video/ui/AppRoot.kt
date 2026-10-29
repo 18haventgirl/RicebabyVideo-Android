@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -48,7 +50,10 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
         bottomBar = {
             // 播放器页需要真正全屏，不显示底部导航
             if (!currentRoute.orEmpty().startsWith("player")) {
-                NavigationBar {
+                NavigationBar(
+                    tonalElevation = 0.dp,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ) {
                     topTabs.forEach { tab ->
                         NavigationBarItem(
                             selected = currentRoute == tab.route,

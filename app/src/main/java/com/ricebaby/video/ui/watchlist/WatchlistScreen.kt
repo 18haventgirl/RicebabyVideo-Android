@@ -25,6 +25,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import com.ricebaby.video.ui.theme.Dimens
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,11 +61,46 @@ fun WatchlistScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            TabRow(selectedTabIndex = selectedTab) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("收藏") })
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("历史") })
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background),
+        ) {
+            Text(
+                "待看",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = Dimens.xl, end = Dimens.xl, top = Dimens.md, bottom = Dimens.md),
+            )
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = Dimens.xl)
+                    .clip(RoundedCornerShape(Dimens.md))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                listOf("收藏", "历史").forEachIndexed { index, label ->
+                    val selected = selectedTab == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(if (selected) MaterialTheme.colorScheme.surface else Color.Transparent)
+                            .clickable { selectedTab = index }
+                            .padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (selected) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
+            Spacer(Modifier.height(Dimens.lg))
             when (selectedTab) {
                 0 -> FavoritesTab(uiState.favorites, viewModel, navController)
                 else -> HistoryTab(uiState.history, viewModel, navController)
@@ -77,10 +120,13 @@ private fun FavoritesTab(
         return
     }
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(120.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+        columns = GridCells.Adaptive(116.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.md),
+        verticalArrangement = Arrangement.spacedBy(Dimens.lg),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = Dimens.xl, end = Dimens.xl, bottom = 96.dp,
+        ),
+        modifier = Modifier.fillMaxSize(),
     ) {
         items(favorites, key = { "${it.source}:${it.vodId}" }) { fav ->
             VideoCard(

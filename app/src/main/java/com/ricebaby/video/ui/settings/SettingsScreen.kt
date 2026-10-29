@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import com.ricebaby.video.ui.components.AppCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -34,6 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.ricebaby.video.ui.theme.Dimens
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ricebaby.video.data.model.SiteInstance
@@ -74,8 +78,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
-                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                text = { Text("添加站点") },
+                icon = { Icon(Icons.Outlined.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary) },
+                text = { Text("添加站点", color = MaterialTheme.colorScheme.onPrimary) },
+                containerColor = MaterialTheme.colorScheme.primary,
             )
         },
     ) { innerPadding ->
@@ -86,16 +91,21 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 .padding(horizontal = 16.dp),
         ) {
             Text(
+                "设置",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = Dimens.md, bottom = Dimens.md),
+            )
+            Text(
                 "观影站点",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = 12.dp),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = Dimens.sm),
             )
             Text(
                 "连接后，搜索、播放与直播都会经由该站点完成。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Row(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -204,7 +214,7 @@ private fun InstanceCard(
     onPassword: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             RadioButton(selected = selected, onClick = onSelect)
             Column(modifier = Modifier.weight(1f)) {
@@ -239,7 +249,7 @@ private fun InstanceCard(
 
 @Composable
 private fun BackupCard(message: String?, onExport: () -> Unit, onImport: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("数据备份", style = MaterialTheme.typography.titleSmall)
             Text(
@@ -267,7 +277,7 @@ private fun ProxyCard(
 ) {
     var host by remember(proxyHost) { mutableStateOf(proxyHost) }
     var port by remember(proxyPort) { mutableStateOf(if (proxyPort > 0) proxyPort.toString() else "") }
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("网络代理（可选）", style = MaterialTheme.typography.titleSmall)
             Text(
