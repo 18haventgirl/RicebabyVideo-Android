@@ -34,6 +34,9 @@ import com.ricebaby.video.ui.watchlist.WatchlistScreen
 
 data class TopTab(val route: String, val label: String, val icon: ImageVector)
 
+/** 沉浸式页面：播放中不显示底部导航 */
+private val chromelessRoutes = listOf("video", "liveplayer")
+
 val topTabs = listOf(
     TopTab("home", "首页", Icons.Outlined.Home),
     TopTab("search", "搜索", Icons.Outlined.Search),
@@ -49,7 +52,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
     Scaffold(
         bottomBar = {
             // 播放器页需要真正全屏，不显示底部导航
-            if (!currentRoute.orEmpty().startsWith("player")) {
+            if (chromelessRoutes.none { currentRoute.orEmpty().startsWith(it) }) {
                 NavigationBar(
                     tonalElevation = 0.dp,
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -123,7 +126,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
                 ),
             ) { DetailScreen(navController = navController) }
             composable(
-                route = "player?vid={vid}&ep={ep}",
+                route = "video?vid={vid}&ep={ep}",
                 arguments = listOf(
                     androidx.navigation.navArgument("vid") {
                         defaultValue = ""
@@ -134,7 +137,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
                         type = androidx.navigation.NavType.StringType
                     },
                 ),
-            ) { com.ricebaby.video.player.PlayerScreen(navController = navController) }
+            ) { com.ricebaby.video.player.VideoPlayerScreen(navController = navController) }
         }
     }
 }

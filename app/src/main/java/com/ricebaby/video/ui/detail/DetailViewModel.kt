@@ -60,7 +60,7 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    fun loadLine(index: Int) {
+    fun loadLine(index: Int, attemptsLeft: Int = 3) {
         val p = payload ?: return
         val target = p.candidates.getOrNull(index) ?: return
         _uiState.value = _uiState.value.copy(
@@ -87,7 +87,16 @@ class DetailViewModel @Inject constructor(
                     poster = outcome.detail.pic ?: _uiState.value.poster,
                     title = outcome.detail.name.ifBlank { _uiState.value.title },
                 )
-                is DetailOutcome.Failed -> _uiState.value = _uiState.value.copy(loading = false, error = outcome.reason)
+
+                is DetailOutcome.Failed -> {
+                    val next = index + 1
+                    if (attemptsLeft > 1 && next < p.candidates.size) {
+                        // 采集站时常整条线路抽风，自动顺延比停在错误页更有用
+                        loadLine(next, attemptsLeft - 1)
+                    } else {
+                        _uiState.value = _uiState.value.copy(loading = false, error = outcome.reason)
+                    }
+                }
             }
         }
     }

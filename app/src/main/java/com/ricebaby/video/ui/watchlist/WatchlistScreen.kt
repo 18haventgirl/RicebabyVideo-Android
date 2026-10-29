@@ -170,7 +170,9 @@ private fun HistoryTab(
 @Composable
 private fun HistoryRow(entry: HistoryEntity, onClick: () -> Unit, onDelete: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(

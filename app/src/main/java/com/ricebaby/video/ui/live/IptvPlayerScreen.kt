@@ -20,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,11 +34,14 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import com.ricebaby.video.data.settings.SettingsRepository
+import com.ricebaby.video.player.PlayerFactory
+import com.ricebaby.video.player.streamMimeType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.net.URLEncoder
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -47,19 +49,27 @@ import kotlinx.coroutines.launch
 class IptvPlayerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     settingsRepository: SettingsRepository,
+    private val playerFactory: PlayerFactory,
 ) : ViewModel() {
+
+    /** 直播流地址与解封装类型（代理地址无扩展名，需单独声明） */
+    data class LiveStream(val url: String, val mimeType: String?)
 
     val channelName: String = savedStateHandle.get<String>("name").orEmpty()
     private val channelUrl: String = savedStateHandle.get<String>("url").orEmpty()
 
-    private val _streamUrl = MutableStateFlow<String?>(null)
-    val streamUrl: StateFlow<String?> = _streamUrl
+    private val _stream = MutableStateFlow<LiveStream?>(null)
+    val stream: StateFlow<LiveStream?> = _stream.asStateFlow()
+
+    fun createPlayer(): ExoPlayer = playerFactory.create()
 
     init {
         viewModelScope.launch {
             val base = settingsRepository.state.first().activeInstance?.baseUrl
-            _streamUrl.value = if (base == null || channelUrl.isBlank()) null else
-                "$base/api/iptv/stream?url=" + URLEncoder.encode(channelUrl, "UTF-8")
+            _stream.value = if (base == null || channelUrl.isBlank()) null else LiveStream(
+                "$base/api/iptv/stream?url=" + URLEncoder.encode(channelUrl, "UTF-8"),
+                streamMimeType(channelUrl),
+            )
         }
     }
 }
@@ -69,14 +79,18 @@ fun IptvPlayerScreen(
     navController: NavHostController,
     viewModel: IptvPlayerViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-    val streamUrl by viewModel.streamUrl.collectAsStateWithLifecycle()
+    val stream by viewModel.stream.collectAsStateWithLifecycle()
     var error by remember { mutableStateOf<String?>(null) }
 
-    val player = remember(streamUrl) {
-        streamUrl?.let {
-            ExoPlayer.Builder(context).build().apply {
-                setMediaItem(MediaItem.fromUri(it))
+    val player = remember(stream) {
+        stream?.let { target ->
+            viewModel.createPlayer().apply {
+                setMediaItem(
+                    MediaItem.Builder()
+                        .setUri(target.url)
+                        .apply { target.mimeType?.let { setMimeType(it) } }
+                        .build(),
+                )
                 addListener(object : Player.Listener {
                     override fun onPlayerError(playerError: PlaybackException) {
                         error = "无法播放该频道，换一个试试"
@@ -99,7 +113,7 @@ fun IptvPlayerScreen(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        if (streamUrl == null) {
+        if (stream == null) {
             CircularProgressIndicator(color = Color.White, modifier = Modifier.align(Alignment.Center).size(28.dp))
         }
         error?.let {

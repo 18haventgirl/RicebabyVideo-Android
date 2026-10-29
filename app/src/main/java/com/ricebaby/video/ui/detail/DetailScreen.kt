@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ricebaby.video.ui.common.stripHtml
 import com.ricebaby.video.ui.theme.Dimens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
@@ -119,7 +120,7 @@ fun DetailScreen(
             }
 
             uiState.detail?.content?.takeIf { it.isNotBlank() }?.let { raw ->
-                val plain = remember(raw) { Regex("<[^>]*>").replace(raw, "").trim() }
+                val plain = remember(raw) { stripHtml(raw) }
                 if (plain.isNotBlank()) {
                     Text(
                         plain,
@@ -198,7 +199,7 @@ fun DetailScreen(
                             onClick = {
                                 snackbarScope.launch {
                                     if (viewModel.canPlay()) {
-                                        navController.navigate("player?vid=${android.net.Uri.encode(viewModel.registryKey)}&ep=${uiState.selectedEpisode}")
+                                        navController.navigate("video?vid=${android.net.Uri.encode(viewModel.registryKey)}&ep=${uiState.selectedEpisode}")
                                     } else {
                                         snackbarHostState.showSnackbar("播放器将在下一里程碑接入")
                                     }

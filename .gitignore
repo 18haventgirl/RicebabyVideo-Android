@@ -27,3 +27,4 @@ secrets.*
 # Misc
 .DS_Store
 *.log
+.debug-ui/
