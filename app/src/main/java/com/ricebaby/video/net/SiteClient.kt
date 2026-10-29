@@ -17,7 +17,6 @@ sealed interface ProbeOutcome {
         val hasAuth: Boolean,
         val hasPremiumAuth: Boolean,
         val subscriptionSources: String,
-        val iptvSources: String,
     ) : ProbeOutcome
     data class Unreachable(val reason: String) : ProbeOutcome
 }
@@ -33,7 +32,6 @@ private data class AuthGetResponse(
     val hasAuth: Boolean = false,
     val hasPremiumAuth: Boolean = false,
     val subscriptionSources: String = "",
-    val iptvSources: String = "",
 )
 
 @Serializable
@@ -65,7 +63,6 @@ class SiteClient @Inject constructor(
                         hasAuth = body.hasAuth,
                         hasPremiumAuth = body.hasPremiumAuth,
                         subscriptionSources = body.subscriptionSources,
-                        iptvSources = body.iptvSources,
                     )
                 }
             }

@@ -101,7 +101,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 modifier = Modifier.padding(vertical = Dimens.sm),
             )
             Text(
-                "连接后，搜索、播放与直播都会经由该站点完成。",
+                "连接后，搜索与播放都会经由该站点完成。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

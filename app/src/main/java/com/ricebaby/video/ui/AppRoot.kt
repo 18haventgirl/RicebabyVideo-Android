@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.LiveTv
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,25 +21,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.ricebaby.video.ui.common.PlaceholderScreen
 import com.ricebaby.video.ui.detail.DetailScreen
 import com.ricebaby.video.ui.home.HomeScreen
-import com.ricebaby.video.ui.live.IptvPlayerScreen
-import com.ricebaby.video.ui.live.LiveScreen
-import com.ricebaby.video.ui.search.SearchScreen
 import com.ricebaby.video.ui.settings.SettingsScreen
 import com.ricebaby.video.ui.watchlist.WatchlistScreen
 
 data class TopTab(val route: String, val label: String, val icon: ImageVector)
 
 /** 沉浸式页面：播放中不显示底部导航 */
-private val chromelessRoutes = listOf("video", "liveplayer")
+private val chromelessRoutes = listOf("video")
 
 val topTabs = listOf(
     TopTab("home", "首页", Icons.Outlined.Home),
-    TopTab("search", "搜索", Icons.Outlined.Search),
     TopTab("watchlist", "待看", Icons.Outlined.Bookmarks),
-    TopTab("live", "直播", Icons.Outlined.LiveTv),
     TopTab("settings", "设置", Icons.Outlined.Settings),
 )
 
@@ -94,27 +86,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
             },
         ) {
             composable("home") { HomeScreen(navController = navController) }
-            composable(
-                route = "search?q={q}",
-                arguments = listOf(
-                    androidx.navigation.navArgument("q") {
-                        defaultValue = ""
-                        type = androidx.navigation.NavType.StringType
-                    },
-                ),
-            ) { SearchScreen(navController = navController) }
             composable("watchlist") { WatchlistScreen(navController = navController) }
-            composable("live") { LiveScreen(navController = navController) }
-            composable(
-                route = "liveplayer?url={url}&name={name}",
-                arguments = listOf(
-                    androidx.navigation.navArgument("url") { type = androidx.navigation.NavType.StringType },
-                    androidx.navigation.navArgument("name") {
-                        defaultValue = ""
-                        type = androidx.navigation.NavType.StringType
-                    },
-                ),
-            ) { IptvPlayerScreen(navController = navController) }
             composable("settings") { SettingsScreen() }
             composable(
                 route = "detail?vid={vid}",
