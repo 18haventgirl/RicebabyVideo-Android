@@ -80,8 +80,8 @@ fun DetailScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = Dimens.screen),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.lg)) {
                 AsyncImage(
@@ -94,7 +94,7 @@ fun DetailScreen(
                         .clip(RoundedCornerShape(Dimens.posterCorner))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 )
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
                     Text(uiState.title, style = MaterialTheme.typography.titleLarge, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     uiState.detail?.let { d ->
                         Text(
@@ -144,7 +144,7 @@ fun DetailScreen(
 
             if (uiState.lines.size > 1) {
                 Text("线路", style = MaterialTheme.typography.titleMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                     uiState.lines.forEachIndexed { index, line ->
                         FilterChip(
                             selected = index == uiState.activeLine,
@@ -173,7 +173,7 @@ fun DetailScreen(
                         Text("该线路暂无可选剧集，试试切换线路", style = MaterialTheme.typography.bodyMedium)
                     } else {
                         Text("选集", style = MaterialTheme.typography.titleMedium)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.sm), verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
                             episodes.forEachIndexed { index, episode ->
                                 val selected = index == uiState.selectedEpisode
                                 Box(

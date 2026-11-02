@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,16 +22,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import com.ricebaby.video.ui.theme.Dimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +45,7 @@ import com.ricebaby.video.data.db.FavoriteEntity
 import com.ricebaby.video.data.db.HistoryEntity
 import com.ricebaby.video.search.VideoItem
 import com.ricebaby.video.ui.common.VideoCard
+import com.ricebaby.video.ui.components.SegmentedToggle
 
 @Composable
 fun WatchlistScreen(
@@ -70,36 +65,14 @@ fun WatchlistScreen(
             Text(
                 "待看",
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(start = Dimens.xl, end = Dimens.xl, top = Dimens.md, bottom = Dimens.md),
+                modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.md, bottom = Dimens.md),
             )
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = Dimens.xl)
-                    .clip(RoundedCornerShape(Dimens.md))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(3.dp),
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                listOf("收藏", "历史").forEachIndexed { index, label ->
-                    val selected = selectedTab == index
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(if (selected) MaterialTheme.colorScheme.surface else Color.Transparent)
-                            .clickable { selectedTab = index }
-                            .padding(vertical = 7.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (selected) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+            SegmentedToggle(
+                options = listOf("收藏", "历史"),
+                selectedIndex = selectedTab,
+                onSelect = { selectedTab = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.screen),
+            )
             Spacer(Modifier.height(Dimens.lg))
             when (selectedTab) {
                 0 -> FavoritesTab(uiState.favorites, viewModel, navController)
@@ -120,11 +93,11 @@ private fun FavoritesTab(
         return
     }
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(116.dp),
+        columns = GridCells.Adaptive(Dimens.gridMin),
         horizontalArrangement = Arrangement.spacedBy(Dimens.md),
         verticalArrangement = Arrangement.spacedBy(Dimens.lg),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = Dimens.xl, end = Dimens.xl, bottom = 96.dp,
+            start = Dimens.screen, end = Dimens.screen, bottom = Dimens.scrollEnd,
         ),
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -153,7 +126,13 @@ private fun HistoryTab(
         EmptyHint("还没有观看记录，播放后自动留在这里")
         return
     }
-    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = Dimens.screen, end = Dimens.screen, bottom = Dimens.scrollEnd,
+        ),
+    ) {
         items(history, key = { "${it.source}:${it.vodId}" }) { entry ->
             HistoryRow(
                 entry = entry,
@@ -172,7 +151,7 @@ private fun HistoryRow(entry: HistoryEntity, onClick: () -> Unit, onDelete: () -
     Row(
         modifier = Modifier.fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(vertical = Dimens.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
@@ -182,7 +161,7 @@ private fun HistoryRow(entry: HistoryEntity, onClick: () -> Unit, onDelete: () -
             modifier = Modifier.size(width = 44.dp, height = 62.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         )
-        Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+        Column(modifier = Modifier.weight(1f).padding(horizontal = Dimens.md)) {
             Text(entry.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 buildString {

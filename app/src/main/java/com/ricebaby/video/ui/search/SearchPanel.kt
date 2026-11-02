@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -77,66 +76,63 @@ fun SearchPanel(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.xl),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
-            }
-            TextField(
-                value = input,
-                onValueChange = { viewModel.onQueryChange(it) },
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(Dimens.lg))
-                    .focusRequester(focusRequester),
-                placeholder = { Text("影片名 / 演员 / 导演") },
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (input.isNotEmpty()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = {
+        TextField(
+            value = input,
+            onValueChange = { viewModel.onQueryChange(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimens.screen)
+                .clip(RoundedCornerShape(Dimens.lg))
+                .focusRequester(focusRequester),
+            placeholder = { Text("影片名 / 演员 / 导演") },
+            leadingIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回")
+                }
+            },
+            trailingIcon = {
+                if (input.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                keyboard?.hide()
+                                viewModel.onQueryChange("")
+                            },
+                        ) {
+                            Icon(Icons.Outlined.Close, contentDescription = "清空")
+                        }
+                        Box(
+                            modifier = Modifier
+                                .padding(end = Dimens.xs)
+                                .clip(RoundedCornerShape(Dimens.pillCorner))
+                                .background(MaterialTheme.colorScheme.primary)
+                                .clickable {
                                     keyboard?.hide()
-                                    viewModel.onQueryChange("")
-                                },
-                            ) {
-                                Icon(Icons.Outlined.Close, contentDescription = "清空")
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .padding(end = 6.dp)
-                                    .clip(RoundedCornerShape(Dimens.pillCorner))
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .clickable {
-                                        keyboard?.hide()
-                                        viewModel.submit(input)
-                                    }
-                                    .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
-                            ) {
-                                Text("搜索", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary)
-                            }
+                                    viewModel.submit(input)
+                                }
+                                .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
+                        ) {
+                            Text("搜索", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(Dimens.lg),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    keyboard?.hide()
+                    viewModel.submit(input)
                 },
-                singleLine = true,
-                shape = RoundedCornerShape(Dimens.lg),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        keyboard?.hide()
-                        viewModel.submit(input)
-                    },
-                ),
-            )
-        }
+            ),
+        )
 
         VGap(Dimens.lg)
 
@@ -145,7 +141,7 @@ fun SearchPanel(
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
                 verticalArrangement = Arrangement.spacedBy(Dimens.sm),
-                modifier = Modifier.padding(horizontal = Dimens.xl),
+                modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
                 uiState.history.forEach { item ->
                     Box(
@@ -168,7 +164,7 @@ fun SearchPanel(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                modifier = Modifier.padding(horizontal = Dimens.xl),
+                modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
                 CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
                 Text(
@@ -195,7 +191,7 @@ fun SearchPanel(
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
                 verticalArrangement = Arrangement.spacedBy(Dimens.sm),
-                modifier = Modifier.padding(horizontal = Dimens.xl),
+                modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
                 uiState.sourceCounts.take(8).forEach { badge ->
                     FilterPill(
@@ -216,10 +212,10 @@ fun SearchPanel(
         }
 
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(116.dp),
+            columns = GridCells.Adaptive(Dimens.gridMin),
             horizontalArrangement = Arrangement.spacedBy(Dimens.md),
             verticalArrangement = Arrangement.spacedBy(Dimens.lg),
-            contentPadding = PaddingValues(start = Dimens.xl, end = Dimens.xl, bottom = 96.dp),
+            contentPadding = PaddingValues(start = Dimens.screen, end = Dimens.screen, bottom = Dimens.scrollEnd),
             modifier = Modifier.fillMaxSize(),
         ) {
             if (uiState.results.isEmpty() && uiState.phase == SearchPhase.Streaming) {
@@ -251,7 +247,7 @@ private fun VGap(height: Dp) {
 @Composable
 fun SectionLabel(text: String, action: Pair<String, () -> Unit>? = null) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.xl, vertical = Dimens.sm),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.screen, vertical = Dimens.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))

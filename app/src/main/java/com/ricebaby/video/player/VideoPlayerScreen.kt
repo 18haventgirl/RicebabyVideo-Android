@@ -307,7 +307,7 @@ fun VideoPlayerScreen(
                     modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)))
                         .systemBarsPadding()
-                        .padding(horizontal = Dimens.sm, vertical = Dimens.sm),
+                        .padding(horizontal = Dimens.md, vertical = Dimens.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = {

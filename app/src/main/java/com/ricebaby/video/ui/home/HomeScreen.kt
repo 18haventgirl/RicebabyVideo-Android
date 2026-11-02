@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -40,14 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ricebaby.video.ui.components.PosterItem
 import com.ricebaby.video.ui.components.PosterSkeleton
+import com.ricebaby.video.ui.components.SegmentedToggle
 import com.ricebaby.video.ui.search.SearchPanel
 import com.ricebaby.video.ui.search.SearchViewModel
 import com.ricebaby.video.ui.theme.Dimens
@@ -121,50 +118,27 @@ private fun BrowseFeed(
             "米宝影视",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = Dimens.xl, end = Dimens.xl, top = Dimens.md),
+            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.md),
         )
 
         SearchEntry(
             onClick = onSearchEntryClick,
-            modifier = Modifier.padding(start = Dimens.xl, end = Dimens.xl, top = Dimens.md, bottom = Dimens.lg),
+            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.md, bottom = Dimens.lg),
         )
 
-        // 电影 / 剧集：Apple segmented 风格
-        Row(
-            modifier = Modifier
-                .padding(horizontal = Dimens.xl)
-                .clip(RoundedCornerShape(Dimens.md))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            listOf(false to "电影", true to "剧集").forEach { (tv, label) ->
-                val selected = uiState.isTv == tv
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.surface else Color.Transparent)
-                        .clickable { viewModel.setType(tv) }
-                        .padding(vertical = 7.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (selected) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
+        // 电影 / 剧集
+        SegmentedToggle(
+            options = listOf("电影", "剧集"),
+            selectedIndex = if (uiState.isTv) 1 else 0,
+            onSelect = { viewModel.setType(it == 1) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.screen),
+        )
 
         if (uiState.tags.isNotEmpty()) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
                 verticalArrangement = Arrangement.spacedBy(Dimens.sm),
-                modifier = Modifier.padding(horizontal = Dimens.xl, vertical = Dimens.lg),
+                modifier = Modifier.padding(horizontal = Dimens.screen, vertical = Dimens.lg),
             ) {
                 uiState.tags.forEach { tag ->
                     val selected = tag == uiState.activeTag
@@ -191,10 +165,10 @@ private fun BrowseFeed(
 
         LazyVerticalGrid(
             state = gridState,
-            columns = GridCells.Adaptive(116.dp),
+            columns = GridCells.Adaptive(Dimens.gridMin),
             horizontalArrangement = Arrangement.spacedBy(Dimens.md),
             verticalArrangement = Arrangement.spacedBy(Dimens.lg),
-            contentPadding = PaddingValues(start = Dimens.xl, end = Dimens.xl, bottom = 96.dp),
+            contentPadding = PaddingValues(start = Dimens.screen, end = Dimens.screen, bottom = Dimens.scrollEnd),
             modifier = Modifier.fillMaxSize(),
         ) {
             if (uiState.items.isEmpty() && uiState.loading) {
@@ -233,7 +207,7 @@ private fun SearchEntry(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(Dimens.lg))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
             .clickable(onClick = onClick)
-            .padding(horizontal = Dimens.lg, vertical = 13.dp),
+            .padding(horizontal = Dimens.lg, vertical = Dimens.lg),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Dimens.md),
     ) {
@@ -241,7 +215,6 @@ private fun SearchEntry(onClick: () -> Unit, modifier: Modifier = Modifier) {
             Icons.Outlined.Search,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
         )
         Text(
             "影片名 / 演员 / 导演",

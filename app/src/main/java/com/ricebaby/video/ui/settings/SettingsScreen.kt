@@ -88,7 +88,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = Dimens.screen),
         ) {
             Text(
                 "设置",
@@ -105,9 +105,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.sm)) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(Dimens.md),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -125,7 +125,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    bottom = Dimens.fabEnd,
+                ),
             ) {
                 item {
                     BackupCard(
@@ -215,7 +218,7 @@ private fun InstanceCard(
     onDelete: () -> Unit,
 ) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.padding(Dimens.md), verticalAlignment = Alignment.CenterVertically) {
             RadioButton(selected = selected, onClick = onSelect)
             Column(modifier = Modifier.weight(1f)) {
                 Text(instance.name, style = MaterialTheme.typography.titleMedium)
@@ -236,7 +239,7 @@ private fun InstanceCard(
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                FilledTonalButton(onClick = onTest, modifier = Modifier.padding(bottom = 4.dp)) { Text("测试") }
+                FilledTonalButton(onClick = onTest, modifier = Modifier.padding(bottom = Dimens.xs)) { Text("测试") }
                 TextButton(onClick = onPassword) { Text(if (passwordSaved) "改密码" else "存密码") }
                 TextButton(onClick = onDelete) {
                     Icon(Icons.Outlined.Delete, contentDescription = null)
@@ -249,15 +252,15 @@ private fun InstanceCard(
 
 @Composable
 private fun BackupCard(message: String?, onExport: () -> Unit, onImport: () -> Unit) {
-    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.sm)) {
+        Column(modifier = Modifier.padding(Dimens.md), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             Text("数据备份", style = MaterialTheme.typography.titleSmall)
             Text(
                 "站点、资源、收藏与观看记录可导出为 JSON 文件，重装后一键恢复。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onExport) { Text("导出备份") }
                 TextButton(onClick = onImport) { Text("导入恢复") }
                 message?.let {
@@ -277,15 +280,15 @@ private fun ProxyCard(
 ) {
     var host by remember(proxyHost) { mutableStateOf(proxyHost) }
     var port by remember(proxyPort) { mutableStateOf(if (proxyPort > 0) proxyPort.toString() else "") }
-    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.sm)) {
+        Column(modifier = Modifier.padding(Dimens.md), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
             Text("网络代理（可选）", style = MaterialTheme.typography.titleSmall)
             Text(
                 "部分资源直连受限时填写，如 127.0.0.1:7890；留空停用。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                 TextField(
                     value = host,
                     onValueChange = { host = it },
@@ -323,7 +326,7 @@ private fun AddInstanceDialog(onDismiss: () -> Unit, onConfirm: (String, String)
         onDismissRequest = onDismiss,
         title = { Text("添加站点") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                 TextField(
                     value = name,
                     onValueChange = { name = it },
