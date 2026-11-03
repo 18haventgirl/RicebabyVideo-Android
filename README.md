@@ -7,6 +7,22 @@
 - **数据本地化**：收藏、历史、源配置、设置全部存设备本地，支持 JSON 备份导出/导入恢复
 - 后端复用已部署站点实例，BASE_URL 可在设置页多实例切换，支持站点密码与网络代理
 
+## 界面预览
+
+截图取自 Pixel_9（Android 16）实机运行，浅色主题。
+
+| 首页 · 大标题 + 常驻搜索栏 + 标签流 | 就地搜索 · 来源与类型筛选 |
+| :---: | :---: |
+| <img src="docs/screenshots/01-home.jpg" alt="首页：大标题、搜索栏、电影/剧集分段、类型标签与海报流" width="230"> | <img src="docs/screenshots/02-search.jpg" alt="首页内展开的搜索面板：输入框、来源与类型筛选徽章、结果网格" width="230"> |
+| 详情 · 线路与选集 | 播放 · 竖屏内嵌，不强制横屏 |
+| <img src="docs/screenshots/03-detail.jpg" alt="详情页：海报、元信息、简介、线路切换与选集" width="230"> | <img src="docs/screenshots/04-player.jpg" alt="竖屏播放器：画面内嵌在顶部，下方直接切换线路与选集" width="230"> |
+| 待看 · 收藏与观看进度 | 设置 · 站点、资源、备份与代理 |
+| <img src="docs/screenshots/05-watchlist.jpg" alt="待看页：收藏网格与带进度的观看记录" width="230"> | <img src="docs/screenshots/06-settings.jpg" alt="设置页：观影站点、资源同步、数据备份与网络代理" width="230"> |
+
+横屏全屏播放：点控制条右侧的全屏按钮进入，退出全屏或按返回都会恢复竖屏。
+
+<img src="docs/screenshots/07-fullscreen.jpg" alt="全屏横屏播放：沉浸式控制层覆盖在画面上" width="620">
+
 ## 构建
 
 要求：Android Studio（2026.1.3+，AGP 9.3.3 pin）、JBR 21+、Android SDK 37。
