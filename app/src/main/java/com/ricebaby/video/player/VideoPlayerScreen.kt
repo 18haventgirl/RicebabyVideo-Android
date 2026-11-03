@@ -191,23 +191,27 @@ fun VideoPlayerScreen(
         if (toast != null) { delay(2200); toast = null }
     }
 
-    // 全屏方向与系统栏
+    // 全屏方向与系统栏：必须在退出全屏**和**离开播放页时还原，否则从全屏直接返回
+    // 会把 Activity 永久留在横屏，上层页面全部跟着横过来
     DisposableEffect(fullscreen) {
-        val window = activity?.window
+        val orientationBefore = activity?.requestedOrientation
+            ?: android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         if (fullscreen) {
-            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            window?.let {
+            // 用 LANDSCAPE 而非 SENSOR_*/USER_*：关闭自动旋转时后两者会被系统降级为竖屏，
+            // 点全屏没反应；LANDSCAPE 是硬性请求，任何旋转设置下都生效
+            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            activity?.window?.let {
                 androidx.core.view.WindowCompat.getInsetsController(it, it.decorView)
                     .hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             }
-        } else {
-            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            window?.let {
+        }
+        onDispose {
+            activity?.requestedOrientation = orientationBefore
+            activity?.window?.let {
                 androidx.core.view.WindowCompat.getInsetsController(it, it.decorView)
                     .show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             }
         }
-        onDispose { }
     }
 
     fun enterPip() {
