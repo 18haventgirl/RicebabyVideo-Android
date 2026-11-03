@@ -14,8 +14,8 @@
 | 首页 · 大标题 + 常驻搜索栏 + 标签流 | 就地搜索 · 来源与类型筛选 |
 | :---: | :---: |
 | <img src="docs/screenshots/01-home.jpg" alt="首页：大标题、搜索栏、电影/剧集分段、类型标签与海报流" width="230"> | <img src="docs/screenshots/02-search.jpg" alt="首页内展开的搜索面板：输入框、来源与类型筛选徽章、结果网格" width="230"> |
-| 详情 · 线路与选集 | 播放 · 竖屏内嵌，不强制横屏 |
-| <img src="docs/screenshots/03-detail.jpg" alt="详情页：海报、元信息、简介、线路切换与选集" width="230"> | <img src="docs/screenshots/04-player.jpg" alt="竖屏播放器：画面内嵌在顶部，下方直接切换线路与选集" width="230"> |
+| 详情 · 线路与选集 | 播放 · 竖屏内嵌 + 线路完整展示 |
+| <img src="docs/screenshots/03-detail.jpg" alt="详情页：海报、元信息、简介、线路切换与选集" width="230"> | <img src="docs/screenshots/04-player.jpg" alt="竖屏播放器：画面上方内嵌播放，下方以换行标签完整展示线路与选集" width="230"> |
 | 待看 · 收藏与观看进度 | 设置 · 站点、资源、备份与代理 |
 | <img src="docs/screenshots/05-watchlist.jpg" alt="待看页：收藏网格与带进度的观看记录" width="230"> | <img src="docs/screenshots/06-settings.jpg" alt="设置页：观影站点、资源同步、数据备份与网络代理" width="230"> |
 
@@ -36,7 +36,7 @@ JAVA_HOME=<JBR 路径> ./gradlew :app:assembleDebug
 ## 版本与分支
 
 - `main`：稳定发布；`dev`：日常集成；`feature/<里程碑>`：任务分支，完成后 `--ff-only` 合入
-- 里程碑 tag：`v0.0.1-M0` 脚手架 → `v0.1.0-M1` 搜索 → `v0.2.0-M2` 详情 → `v0.3.0-M3` 播放器桥 → `v0.4.0-M4` 首页 → `v0.5.0-M5` IPTV → `v0.6.0-M6` 打磨 → `v0.7.0-M7` UI 重做 → `v0.8.0-M8` 原生播放器 → `v0.9.0-M9` 搜索并入首页（同时移除 IPTV）→ `v0.10.0-M10` 边界与留白统一
+- 里程碑 tag：`v0.0.1-M0` 脚手架 → `v0.1.0-M1` 搜索 → `v0.2.0-M2` 详情 → `v0.3.0-M3` 播放器桥 → `v0.4.0-M4` 首页 → `v0.5.0-M5` IPTV → `v0.6.0-M6` 打磨 → `v0.7.0-M7` UI 重做 → `v0.8.0-M8` 原生播放器 → `v0.9.0-M9` 搜索并入首页（同时移除 IPTV）→ `v0.10.0-M10` 边界与留白统一 → `v0.11.0-M11` 播放页交互收敛
 - 设计与计划文档见 `docs/superpowers/`
 
 ## 已知限制

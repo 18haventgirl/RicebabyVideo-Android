@@ -42,6 +42,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ricebaby.video.ui.common.stripHtml
+import com.ricebaby.video.ui.components.EpisodeChipRow
+import com.ricebaby.video.ui.components.LineChipRow
 import com.ricebaby.video.ui.theme.Dimens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
@@ -144,20 +146,16 @@ fun DetailScreen(
 
             if (uiState.lines.size > 1) {
                 Text("线路", style = MaterialTheme.typography.titleMedium)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                    uiState.lines.forEachIndexed { index, line ->
-                        FilterChip(
-                            selected = index == uiState.activeLine,
-                            onClick = { viewModel.loadLine(index) },
-                            label = { Text(line.name) },
-                        )
-                    }
-                }
+                LineChipRow(
+                    lines = uiState.lines.map { it.name },
+                    selected = uiState.activeLine,
+                    onSelect = { viewModel.loadLine(it) },
+                )
             }
 
             when {
                 uiState.loading -> Box(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.xl),
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator() }
 
@@ -173,28 +171,11 @@ fun DetailScreen(
                         Text("该线路暂无可选剧集，试试切换线路", style = MaterialTheme.typography.bodyMedium)
                     } else {
                         Text("选集", style = MaterialTheme.typography.titleMedium)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.sm), verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
-                            episodes.forEachIndexed { index, episode ->
-                                val selected = index == uiState.selectedEpisode
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(Dimens.pillCorner))
-                                        .background(
-                                            if (selected) MaterialTheme.colorScheme.primaryContainer
-                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        )
-                                        .clickable { viewModel.selectEpisode(index) }
-                                        .padding(horizontal = Dimens.md, vertical = 7.dp),
-                                ) {
-                                    Text(
-                                        episode.name,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
+                        EpisodeChipRow(
+                            episodes = episodes.map { it.name },
+                            selected = uiState.selectedEpisode,
+                            onSelect = { viewModel.selectEpisode(it) },
+                        )
                         Button(
                             onClick = {
                                 snackbarScope.launch {

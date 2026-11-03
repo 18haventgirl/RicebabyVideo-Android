@@ -275,7 +275,7 @@ fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
                 else MaterialTheme.colorScheme.surface,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = Dimens.md, vertical = 6.dp),
+            .padding(horizontal = Dimens.md, vertical = Dimens.sm),
     ) {
         Text(
             text,

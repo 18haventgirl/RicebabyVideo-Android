@@ -149,7 +149,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     item {
                         Text(
                             "还没有站点，点右下角「添加站点」开始。",
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.xxl),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.util.Rational
 import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -12,7 +13,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -21,8 +21,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Forward10
@@ -78,6 +78,8 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.ricebaby.video.ui.components.EpisodeChipRow
+import com.ricebaby.video.ui.components.LineChipRow
 import com.ricebaby.video.ui.theme.Dimens
 
 private val SPEEDS = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
@@ -214,6 +216,9 @@ fun VideoPlayerScreen(
         }
     }
 
+    // 全屏时系统返回先回到竖屏继续播放，不直接退出播放页
+    BackHandler(enabled = fullscreen) { fullscreen = false }
+
     fun enterPip() {
         if (activity == null) return
         fullscreen = false
@@ -286,6 +291,9 @@ fun VideoPlayerScreen(
                         PlayerView(ctx).apply {
                             useController = false
                             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                            // AndroidView 内嵌 PlayerView 时媒体帧与合成层不同步会闪黑帧，
+                            // media3 1.11 提供的 Compose 同步补丁专为此场景
+                            setEnableComposeSurfaceSyncWorkaround(true)
                         }
                     },
                     update = { it.player = player },
@@ -315,10 +323,20 @@ fun VideoPlayerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = {
-                        viewModel.persistProgress()
-                        navController.popBackStack()
+                        if (fullscreen) {
+                            // 全屏时左上角与返回键都表示"回到竖屏继续播放"，再按一次才离开播放页
+                            fullscreen = false
+                        } else {
+                            viewModel.persistProgress()
+                            navController.popBackStack()
+                        }
                     }) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "返回", tint = Color.White)
+                        Icon(
+                            imageVector = if (fullscreen) Icons.Outlined.FullscreenExit
+                            else Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = if (fullscreen) "退出全屏" else "返回",
+                            tint = Color.White,
+                        )
                     }
                     Text(
                         buildString {
@@ -464,75 +482,45 @@ fun VideoPlayerScreen(
             }
         }
 
-        // 竖屏信息区：线路 + 选集
+        // 竖屏信息区：与详情页同款的线路 / 选集呈现，换行完整展示且可纵向滚动
         if (!fullscreen && !inPip) {
             Column(
-                modifier = Modifier.fillMaxWidth().weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(top = Dimens.md),
-                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = Dimens.md, bottom = Dimens.xl),
+                verticalArrangement = Arrangement.spacedBy(Dimens.md),
             ) {
                 if (state.lines.size > 1) {
                     Text(
                         "线路",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = Dimens.xl),
+                        modifier = Modifier.padding(horizontal = Dimens.screen),
                     )
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                        contentPadding = PaddingValues(horizontal = Dimens.xl),
-                    ) {
-                        items(state.lines.size) { index ->
-                            LineChip(
-                                text = state.lines[index].name,
-                                selected = index == state.activeLine,
-                            ) { viewModel.switchLine(index) }
-                        }
-                    }
+                    LineChipRow(
+                        lines = state.lines.map { it.name },
+                        selected = state.activeLine,
+                        onSelect = { viewModel.switchLine(it) },
+                        modifier = Modifier.padding(horizontal = Dimens.screen),
+                    )
                 }
                 if (state.episodes.isNotEmpty()) {
                     Text(
                         "选集",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = Dimens.xl),
+                        modifier = Modifier.padding(horizontal = Dimens.screen),
                     )
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                        contentPadding = PaddingValues(horizontal = Dimens.xl),
-                        modifier = Modifier.padding(bottom = Dimens.lg),
-                    ) {
-                        items(state.episodes.indices.toList()) { index ->
-                            LineChip(
-                                text = state.episodes[index].name,
-                                selected = index == state.selectedEpisode,
-                            ) { viewModel.selectEpisode(index) }
-                        }
-                    }
+                    EpisodeChipRow(
+                        episodes = state.episodes.map { it.name },
+                        selected = state.selectedEpisode,
+                        onSelect = { viewModel.selectEpisode(it) },
+                        modifier = Modifier.padding(horizontal = Dimens.screen),
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun LineChip(text: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(Dimens.pillCorner))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = Dimens.md, vertical = 7.dp),
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-        )
     }
 }
 

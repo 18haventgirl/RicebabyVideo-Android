@@ -86,7 +86,7 @@ fun PosterItem(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(Dimens.sm)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(Dimens.sm))
                         .background(Color.Black.copy(alpha = 0.55f))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
@@ -117,7 +117,7 @@ fun PosterItem(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp),
+                .padding(top = Dimens.sm),
         )
         subtitle?.takeIf { it.isNotBlank() }?.let {
             Text(

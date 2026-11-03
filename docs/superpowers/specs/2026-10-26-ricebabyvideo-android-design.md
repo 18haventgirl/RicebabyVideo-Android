@@ -186,3 +186,9 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 根因二（顺带发现）：请求的是 `SENSOR_LANDSCAPE`，用户**关闭自动旋转**时系统会把它降级为竖屏，点全屏毫无反应。改为 `SCREEN_ORIENTATION_LANDSCAPE` 硬性请求
   - 模拟器实测（自动旋转关闭状态）：进全屏 `cur=2424x1080` ✓；全屏中按系统返回 `cur=1080x2424` ✓；点「退出全屏」`cur=1080x2424` ✓
   - 环境记录：当日从模拟器与宿主机**直连 pages.dev 均不可达**（仅经 127.0.0.1:7890 可达），应用内代理为空时会全线报「无法连接站点」；已在测试机上填入 `127.0.0.1:7890` 并确认站点探测回到「可连接」
+- **2026-11-04 M11 完成**（tag `v0.11.0-M11`，35 单测绿）：按用户三条反馈收敛播放页与边界
+  - **全屏返回语义**：此前在全屏按返回（或点左上角）会直接退出播放页。现改为全屏时左上角按钮显示"退出全屏"图标并回到竖屏继续播放，系统返回同样只退全屏（`BackHandler(enabled = fullscreen)`），再按一次才离开播放页。实测：全屏 `cur=2424x1080` → 返回 `cur=1080x2424` 且仍在播放页（选集可见）→ 再返回才回详情页
+  - **切换顺滑度**：media3 1.11 的 `PlayerView` 没有公开的 `surfaceType` setter（常量包内可见，已查证 aar 字节码），改用官方为 Compose 内嵌场景提供的 `setEnableComposeSurfaceSyncWorkaround(true)`，消除 AndroidView 里 SurfaceView 与合成层不同步的黑帧
+  - **线路/选集呈现统一**：抽出 `ui/components/ChipRows.kt`（`LineChipRow` = FlowRow + M3 FilterChip 带选中态，`EpisodeChipRow` = FlowRow + 圆角药丸），详情页与播放页同源；播放页原来是单行 LazyRow 自定义 chip（只能看到前几条、无勾选态），现与详情页完全一致并改为纵向可滚动。实测两页线路标签左边缘同为 24dp、首个 chip 同为 40dp、换行位置一致
+  - **逐页边界复核**：详情页 loading 竖衬 24.dp→`Dimens.xl`、设置页 32.dp→`Dimens.xxl`、搜索筛选药丸竖衬 6.dp→`Dimens.sm`（与新的选集 chip 同高）、海报卡标题上间距 6.dp→`Dimens.sm`、底部角标圆角 8.dp→`Dimens.sm`；特性代码裸 dp 从 29 降到 22，剩余均为图标/海报/描边等组件自身几何
+  - README 播放页截图重拍（旧图仍是单行 chip，已换成换行标签版），版本号对齐 0.11.0-M11
