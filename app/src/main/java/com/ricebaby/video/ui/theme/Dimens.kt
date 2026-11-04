@@ -24,10 +24,11 @@ object Dimens {
     val posterCorner = 12.dp
     val pillCorner = 999.dp
 
-    /** 分段控件：外壳圆角 = 内衬 3dp + 选中块圆角 9dp */
+    /** 分段控件：外壳圆角 = 内衬 3dp + 选中块圆角 9dp；高度固定，滑块才能可靠地填满 */
     val segmentCorner = 12.dp
     val segmentInset = 3.dp
     val segmentItemCorner = 9.dp
+    val segmentHeight = 36.dp
 
     /** 海报网格最小列宽，三屏共用同一密度 */
     val gridMin = 116.dp

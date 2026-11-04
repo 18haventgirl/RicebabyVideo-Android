@@ -192,3 +192,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **线路/选集呈现统一**：抽出 `ui/components/ChipRows.kt`（`LineChipRow` = FlowRow + M3 FilterChip 带选中态，`EpisodeChipRow` = FlowRow + 圆角药丸），详情页与播放页同源；播放页原来是单行 LazyRow 自定义 chip（只能看到前几条、无勾选态），现与详情页完全一致并改为纵向可滚动。实测两页线路标签左边缘同为 24dp、首个 chip 同为 40dp、换行位置一致
   - **逐页边界复核**：详情页 loading 竖衬 24.dp→`Dimens.xl`、设置页 32.dp→`Dimens.xxl`、搜索筛选药丸竖衬 6.dp→`Dimens.sm`（与新的选集 chip 同高）、海报卡标题上间距 6.dp→`Dimens.sm`、底部角标圆角 8.dp→`Dimens.sm`；特性代码裸 dp 从 29 降到 22，剩余均为图标/海报/描边等组件自身几何
   - README 播放页截图重拍（旧图仍是单行 chip，已换成换行标签版），版本号对齐 0.11.0-M11
+- **2026-11-04 M12 完成**（tag `v0.12.0-M12`，35 单测绿）：修用户指出的两处"看着不对"
+  - **顶部大留白**：根因是系统栏被避让了两次 —— 外层 AppRoot 的 Scaffold 已用 innerPadding 处理状态栏与底部导航，首页/待看/设置/详情四个页面又各自套了一层 Scaffold，M3 的 Scaffold 只 pad 不 consume，于是状态栏 54dp 被叠加成 108dp。实测「米宝影视」标题 top 由 120dp 降到 66dp（54 状态栏 + 12 自身留白），待看与设置同样从 120dp → 66dp。修法：四处内层 Scaffold 统一 `contentWindowInsets = WindowInsets(0,0,0,0)`
+  - **分段控件白色块**：抽组件时把选中块写成 `matchParentSize()`（宽度=整个控件，靠父级 clip 裁切），切换时表现为"白色从一侧擦过来"而不是一格在滑动；改成固定控件高度 `Dimens.segmentHeight = 36dp` + 滑块宽度 = 内缩后均分的一格，并与文字格共用同一几何。中途我把滑块写成 `fillMaxHeight()`，Column 把剩余全高传进来导致白色拉到屏幕底部，已由截图抓出并修正
+  - README 首页/搜索/详情/待看/设置五张截图重拍（旧图仍带修复前的顶部大留白）
