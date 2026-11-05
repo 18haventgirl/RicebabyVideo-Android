@@ -133,16 +133,10 @@ private fun BrowseFeed(
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         var tagManagerOpen by rememberSaveable { mutableStateOf(false) }
-        Text(
-            "米宝影视",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.md),
-        )
-
+        // 页名交给系统栏与启动器图标承担，首屏直接从搜索框开始
         SearchEntry(
             onClick = onSearchEntryClick,
-            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.md, bottom = Dimens.lg),
+            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.lg, bottom = Dimens.lg),
         )
 
         // 电影 / 剧集

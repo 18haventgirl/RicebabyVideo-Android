@@ -23,8 +23,8 @@ android {
         applicationId = "com.ricebaby.video"
         minSdk = 26
         targetSdk = 37
-        versionCode = 18
-        versionName = "0.16.1-M16b"
+        versionCode = 19
+        versionName = "0.17.0-M17"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

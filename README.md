@@ -1,4 +1,4 @@
-# 米宝影视 · Android
+# 海里影视 · Android
 
 [Ricebaby_Video](https://github.com/18haventgirl/Ricebaby_Video) 的安卓客户端，原生界面与原生播放器，后端复用已部署的站点实例。
 

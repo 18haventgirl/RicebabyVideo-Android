@@ -7,6 +7,11 @@ import android.util.Rational
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -487,19 +492,34 @@ fun VideoPlayerScreen(
                         .then(if (fullscreen) Modifier.displayCutoutPadding() else Modifier)
                         .padding(horizontal = Dimens.sm, vertical = Dimens.xs),
                 ) {
+                    var seeking by remember { mutableStateOf(false) }
+                    var seekFraction by remember { mutableFloatStateOf(0f) }
+                    val shownFraction = (
+                        if (seeking) seekFraction else if (durationMs > 0) positionMs.toFloat() / durationMs else 0f
+                    ).coerceIn(0f, 1f)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(fmt(positionMs), style = MaterialTheme.typography.labelMedium, color = Color.White)
-                        Slider(
-                            value = if (durationMs > 0) positionMs.toFloat() / durationMs.toFloat() else 0f,
-                            onValueChange = { fraction ->
-                                if (durationMs > 0) player.seekTo((fraction * durationMs).toLong())
+                        Text(
+                            fmt((shownFraction * durationMs).toLong()),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                        )
+                        SeekBar(
+                            fraction = shownFraction,
+                            expanded = seeking,
+                            modifier = Modifier.weight(1f).padding(horizontal = Dimens.md),
+                            onDrag = { fraction ->
+                                seeking = true
+                                seekFraction = fraction
+                                seekPreviewMs = (fraction * durationMs).toLong()
+                                hudKind = 3
                             },
-                            modifier = Modifier.weight(1f),
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
-                                activeTrackColor = Color.White,
-                                inactiveTrackColor = Color.White.copy(alpha = 0.32f),
-                            ),
+                            onCommit = { fraction ->
+                                seeking = false
+                                if (durationMs > 0) {
+                                    player.seekTo((fraction * durationMs).toLong())
+                                    player.play()
+                                }
+                            },
                         )
                         Text(
                             if (durationMs > 0) fmt(durationMs) else "--:--",
@@ -660,6 +680,69 @@ private fun cutoutMode(extend: Boolean): Int =
         android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     else
         android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+
+/**
+ * 自绘进度条：M3 Slider 的轨道只有 4dp、滑块 10dp，横屏下几乎按不准，
+ * 拖动时还会边拖边 seek 导致画面反复 seek。这里加高触摸区、放大滑块，
+ * 拖动过程中只回调预览位置，松手才真正 seek。
+ */
+@Composable
+private fun SeekBar(
+    fraction: Float,
+    expanded: Boolean,
+    modifier: Modifier = Modifier,
+    onDrag: (Float) -> Unit,
+    onCommit: (Float) -> Unit,
+) {
+    var widthPx by remember { mutableFloatStateOf(1f) }
+    var lastFraction by remember { mutableFloatStateOf(fraction) }
+    val trackHeight = if (expanded) 8.dp else 5.dp
+    val thumbRadius = if (expanded) 9.dp else 6.dp
+    Box(
+        modifier = modifier
+            .height(30.dp)
+            .onSizeChanged { widthPx = it.width.toFloat() }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = { onCommit(lastFraction) },
+                    onDragCancel = { onCommit(lastFraction) },
+                ) { change, _ ->
+                    lastFraction = (change.position.x / widthPx).coerceIn(0f, 1f)
+                    onDrag(lastFraction)
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val target = (offset.x / widthPx).coerceIn(0f, 1f)
+                    onDrag(target)
+                    onCommit(target)
+                }
+            },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(trackHeight)
+                .clip(RoundedCornerShape(Dimens.pillCorner))
+                .background(Color.White.copy(alpha = 0.30f)),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                    .fillMaxHeight()
+                    .background(Color.White),
+            )
+        }
+        Box(
+            Modifier
+                .offset(x = if (widthPx > 1f) (fraction.coerceIn(0f, 1f) * widthPx).dp - thumbRadius else 0.dp)
+                .size(thumbRadius * 2)
+                .clip(CircleShape)
+                .background(Color.White),
+        )
+    }
+}
 
 private fun fmt(ms: Long): String {
     val total = ms / 1000

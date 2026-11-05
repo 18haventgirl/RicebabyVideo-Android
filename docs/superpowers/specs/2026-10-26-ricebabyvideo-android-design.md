@@ -144,6 +144,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M15 | 首页标签体验与竞态、搜索筛选折叠、全屏边到边与滑动手势 | `feature/m15-feed-gestures` |
 | M15b | 详情页顶栏双重避让修复 | `feature/m15b-detail-inset` |
 | M16 | 全 App 胶囊统一与字阶收敛 | `feature/m16-chip-type` |
+| M16b | 线路默认折叠、间距收紧、管理按钮对齐 | `feature/m16b-line-collapse` |
+| M17 | 更名「海里影视」、自绘进度条、图标与安全区适配 | `feature/m17-brand-seekbar` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -247,3 +249,9 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **首页「管理」对齐**：原来放在 FlowRow 旁的 `Row(verticalAlignment = Top)` 里，与 32dp 高的胶囊根本不在一条线上。改为把「⚙ 管理」作为最后一个元素排进同一条 FlowRow（新增 `TagChipRow`），高度与胶囊一致、随行换行
   - 实测：详情页 29 条线路折叠成两行，「展开全部 29 条线路」与选集同屏可见；播放页同样；展开后 29 条全部铺开
   - 撤版：v0.16.0-M16 置为预发布并指向 v0.16.1-M16b
+- **2026-11-05 M17 完成**（tag `v0.17.0-M17`，41 单测绿）：进度条重做、去掉首页页名、更名与图标
+  - **进度条**：确认是设计缺陷而非有意为之 —— M3 `Slider` 轨道仅 4dp、滑块 10dp、触摸区 48dp，横屏下按不准；且 `onValueChange` 每帧 seek 一次，拖动时画面反复跳。改为自绘 `SeekBar`：轨道常态 5dp / 拖动 8dp，滑块 6→9dp，触摸区 30dp 高，拖动只更新预览并复用中间 HUD 显示目标时间，松手才真正 seek；时间读数改为跟随拖动位置，并夹到 [0,1]（此前会出现「24:16 / 24:15」）。实测向右拖动进度由 00:22 走到 10:38
+  - **首页页名去掉**：删除 `米宝影视` 大标题，搜索框直接顶到状态栏下方 lg，首屏多出一行海报
+  - **更名**：`app_name` 改为「海里影视」，README 主标题同步；`applicationId` 与包名保持 `com.ricebaby.video` 不变（改了会断掉覆盖升级），GitHub 仓库名暂未改
+  - **图标**：用桌面的 `海里海浪播放图标.png`（1254²，navy #041C3D + 米色 #FEF2DA）。踩到的坑：① 源图圆角外是纯白，按 GraphicsPath 圆角裁剪时半径只要小于原图的 18.8% 就会带进一圈白弧，最终改为「圆角裁剪 + 近白像素换成 navy」双保险；② 自适应图标的可见圆只有画布的 66%，画面按 84%/88% 摆放都会切掉「海里」，按公式解到 52% 并上移 8% 才完整；③ PowerShell 里 `Add-Type` 定义的类与 `GraphicsPath.AddArc` 参数绑定不稳，改用 JBR 的 `java File.java` 单文件模式跑 Java2D。产出 `mipmap-{m,h,2h,3h,4}dpi/ic_launcher_foreground.png` + 纯色背景层 + 单色（三角形）蒙版层
+  - 实测：模拟器启动器图标为 navy 圆面 + 海浪播放标 + 完整「海里」二字，无白角、无切字
