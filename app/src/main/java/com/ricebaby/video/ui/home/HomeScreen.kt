@@ -58,6 +58,7 @@ import com.ricebaby.video.ui.components.PosterItem
 import com.ricebaby.video.ui.components.PosterSkeleton
 import com.ricebaby.video.ui.components.SegmentedToggle
 import com.ricebaby.video.ui.components.SelectChip
+import com.ricebaby.video.ui.components.TagChipRow
 import com.ricebaby.video.ui.search.SearchPanel
 import com.ricebaby.video.ui.search.SearchViewModel
 import com.ricebaby.video.ui.theme.Dimens
@@ -153,34 +154,13 @@ private fun BrowseFeed(
         )
 
         if (uiState.tags.isNotEmpty() || uiState.serverTags.isNotEmpty()) {
-            Row(
-                verticalAlignment = Alignment.Top,
+            TagChipRow(
+                tags = uiState.tags,
+                selected = uiState.activeTag,
+                onSelect = { viewModel.setTag(it) },
+                onManage = { tagManagerOpen = true },
                 modifier = Modifier.padding(horizontal = Dimens.screen, vertical = Dimens.lg),
-            ) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                    verticalArrangement = Arrangement.spacedBy(Dimens.sm),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    uiState.tags.forEach { tag ->
-                        SelectChip(
-                            label = tag,
-                            selected = tag == uiState.activeTag,
-                            onClick = { viewModel.setTag(tag) },
-                        )
-                    }
-                }
-                Text(
-                    "管理",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(start = Dimens.md)
-                        .clip(RoundedCornerShape(Dimens.sm))
-                        .clickable { tagManagerOpen = true }
-                        .padding(horizontal = Dimens.sm, vertical = Dimens.sm),
-                )
-            }
+            )
         }
 
         if (tagManagerOpen) {

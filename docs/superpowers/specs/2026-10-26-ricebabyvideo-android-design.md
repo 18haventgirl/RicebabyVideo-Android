@@ -241,3 +241,9 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **字阶补齐**：`Type.kt` 原来漏定义 `titleSmall` 与 `labelLarge`，它们悄悄回落到 M3 默认值（14 Medium / 14 Medium），与自定义层混排。现补 `titleSmall = 14 SemiBold`、`labelLarge = 14 Medium`，并把 `bodySmall` 从 13sp 收到 12sp/17lh 对齐标准 caption；文件头写明分工：页名 headlineMedium、分区标题 titleMedium、卡片内小标题 titleSmall、条目正文 bodyLarge/bodyMedium、辅助信息 bodySmall、胶囊 labelMedium、按钮 labelLarge
   - **按分工归位**：设置页三张卡片标题（视频资源 / 数据备份 / 网络代理）titleSmall→titleMedium；详情页「播放 · 集名」titleMedium→labelLarge（按钮文案）；其余分区标题统一 titleMedium
   - 实测：首页标签、搜索筛选、详情线路与选集的胶囊同高同圆角同配色，设置页卡片标题层级一致
+- **2026-11-05 M16b 完成**（tag `v0.16.1-M16b`，41 单测绿）：用户指出 M16 理解偏了 —— 要的是搜索筛选那种**默认折叠**，不只是样式统一
+  - **线路折叠**：`LineChipRow` 默认 `maxLines = 2`，下方「展开全部 N 条线路 / 收起」由用户主动展开；是否显示开关用 FlowRow 实测高度换算行数（`IntSize` + 32dp 胶囊高 + 4dp 间距），只占一行时不出现多余按钮。foundation 1.12.1 的 FlowRow 有 `maxLines`/`overflow` 但**没有** `onLinesCount`，所以走高度换算
+  - **间距收紧**：胶囊之间左右与上下由 8dp 收到 4dp（线路、选集、首页标签、搜索筛选同步），此前 8dp + 胶囊自带 12dp 内边距让整组看起来很散
+  - **首页「管理」对齐**：原来放在 FlowRow 旁的 `Row(verticalAlignment = Top)` 里，与 32dp 高的胶囊根本不在一条线上。改为把「⚙ 管理」作为最后一个元素排进同一条 FlowRow（新增 `TagChipRow`），高度与胶囊一致、随行换行
+  - 实测：详情页 29 条线路折叠成两行，「展开全部 29 条线路」与选集同屏可见；播放页同样；展开后 29 条全部铺开
+  - 撤版：v0.16.0-M16 置为预发布并指向 v0.16.1-M16b

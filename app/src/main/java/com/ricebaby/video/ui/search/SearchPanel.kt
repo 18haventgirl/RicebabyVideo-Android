@@ -145,8 +145,8 @@ fun SearchPanel(
         if (uiState.history.isNotEmpty() && uiState.results.isEmpty() && uiState.phase == SearchPhase.Idle) {
             SectionLabel("搜索历史", action = "清空" to { viewModel.clearHistory() })
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
+                verticalArrangement = Arrangement.spacedBy(Dimens.xs),
                 modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
                 uiState.history.forEach { item ->
@@ -188,8 +188,8 @@ fun SearchPanel(
         if (uiState.sourceCounts.isNotEmpty() || uiState.typeCounts.isNotEmpty()) {
             FlowRow(
                 maxLines = if (filtersExpanded) Int.MAX_VALUE else 2,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
+                verticalArrangement = Arrangement.spacedBy(Dimens.xs),
                 modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
                 uiState.sourceCounts.take(8).forEach { badge ->
