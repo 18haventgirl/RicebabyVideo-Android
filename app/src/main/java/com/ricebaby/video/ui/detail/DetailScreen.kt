@@ -71,6 +71,8 @@ fun DetailScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
+                // TopAppBar 默认自带状态栏内衬，与外层 Scaffold 叠加会把标题行推到 126dp
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 title = { Text(uiState.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {

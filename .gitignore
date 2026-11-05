@@ -28,3 +28,6 @@ secrets.*
 .DS_Store
 *.log
 .debug-ui/
+
+# 发布产物暂存（APK 只上传 GitHub Release，不进仓库）
+/dist/

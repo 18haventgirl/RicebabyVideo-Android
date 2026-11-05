@@ -230,3 +230,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **全屏摄像头一侧白边**：142px 亮带并非刘海，而是外层 Scaffold 的内衬背景（横屏时落在左侧），窗口背景与 decor 都盖不住。改为播放页上报全屏状态，AppRoot 在全屏时不给 NavHost 加内衬；同时补 `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES`、全屏期间窗口背景置黑、控制层加 `displayCutoutPadding()`。实测全屏左边缘逐行采样已全黑，退出全屏回竖屏正常
   - **手势**：原来只有纵向亮度/音量且无任何反馈，横向调进度根本没实现。现按起手方向区分横竖（横=按屏宽比例 seek，抬手落位；纵=左半亮度 / 右半音量），统一 HUD（图标 + 数值 + 进度条，抬手 0.7 秒消失），离开播放页把 `screenBrightness` 还原为跟随系统。实测横滑 300px 进度 +24 秒、左半上滑 HUD「亮度 100%」、右半 HUD 跟手
   - 已知限制补记：`Compose` 的 `padding()` 不接受负值，曾试图用负 padding 抵消内衬直接抛 `IllegalArgumentException: Padding must be non-negative` 崩溃，此类"抵消父级内衬"只能自上而下解决
+- **2026-11-05 M15b 完成**（tag `v0.15.1-M15b`，41 单测绿）：用户手机截图指出详情页顶部留白仍未修
+  - 根因：M12 只把内层 `Scaffold` 的 `contentWindowInsets` 归零，漏了 `TopAppBar` 自己默认的 `windowInsets`（状态栏 + 顶栏内衬）—— 外层已避让 54dp，顶栏又加 54dp，标题行落到 126dp。全站只有详情页用 TopAppBar，所以此前逐页量「标题 top」时没覆盖到它
+  - 修法：`TopAppBar(windowInsets = WindowInsets(0,0,0,0))`。实测返回键 bounds 由 `[43,337]` 上移到 `[43,195]`（195px ≈ 54dp 状态栏 + 顶栏自身内边距）
+  - 发布处理：v0.15.0-M15 置为预发布并在说明里指向新版，代码 tag 保留不删
