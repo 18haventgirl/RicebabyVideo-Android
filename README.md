@@ -1,73 +1,55 @@
-# RicebabyVideo Android
+# 米宝影视 · Android
 
-米宝影视安卓客户端：把 [Ricebaby_Video](https://github.com/18haventgirl/Ricebaby_Video)（Next.js 视频聚合站）带到手机端。
+[Ricebaby_Video](https://github.com/18haventgirl/Ricebaby_Video) 的安卓客户端，原生界面与原生播放器，后端复用已部署的站点实例。
 
-- **原生界面**（Jetpack Compose + Material 3）：首页大标题 + 搜索栏 + 豆瓣标签流，多源聚合搜索（SSE 流式、来源/类型筛选）就地展开，详情与线路选集，收藏/历史待看
-- **原生播放器**（Media3 ExoPlayer）：竖屏内嵌播放不强制横屏，倍速/±10 秒/全屏/小窗（PiP），手势调亮度音量，线路与选集即时切换，失败或卡顿自动顺延线路，进度落库自动续播；取流走站点智能代理，兼容受 Referer/DNS 限制的采集源
-- **数据本地化**：收藏、历史、源配置、设置全部存设备本地，支持 JSON 备份导出/导入恢复
-- 后端复用已部署站点实例，BASE_URL 可在设置页多实例切换，支持站点密码与网络代理
+## 功能
+
+**观影**
+- 多源聚合搜索，结果流式返回，可按来源与类型筛选
+- 首页标签流推荐，电影 / 剧集分区
+- 线路与选集即时切换，线路失败或卡顿自动顺延
+- 倍速、快退快进、亮度音量手势、全屏横屏、小窗播放
+- 观看进度自动记录，下次打开直接续播
+
+**待看**
+- 收藏与观看记录保存在设备本地
+- 支持一键导出与恢复备份
+
+**站点**
+- 多站点实例切换，支持站点访问密码与网络代理
 
 ## 界面预览
 
 截图取自 Pixel_9（Android 16）实机运行，浅色主题。
 
-| 首页 · 大标题 + 常驻搜索栏 + 标签流 | 就地搜索 · 来源与类型筛选 |
+| 首页 | 搜索 |
 | :---: | :---: |
-| <img src="docs/screenshots/01-home.jpg" alt="首页：大标题、搜索栏、电影/剧集分段、类型标签与海报流" width="230"> | <img src="docs/screenshots/02-search.jpg" alt="首页内展开的搜索面板：输入框、来源与类型筛选徽章、结果网格" width="230"> |
-| 详情 · 线路与选集 | 播放 · 竖屏内嵌 + 线路完整展示 |
-| <img src="docs/screenshots/03-detail.jpg" alt="详情页：海报、元信息、简介、线路切换与选集" width="230"> | <img src="docs/screenshots/04-player.jpg" alt="竖屏播放器：画面上方内嵌播放，下方以换行标签完整展示线路与选集" width="230"> |
-| 待看 · 收藏与观看进度 | 设置 · 站点、资源、备份与代理 |
-| <img src="docs/screenshots/05-watchlist.jpg" alt="待看页：收藏网格与带进度的观看记录" width="230"> | <img src="docs/screenshots/06-settings.jpg" alt="设置页：观影站点、资源同步、数据备份与网络代理" width="230"> |
+| <img src="docs/screenshots/01-home.jpg" alt="首页：搜索栏、电影剧集切换与海报推荐流" width="230"> | <img src="docs/screenshots/02-search.jpg" alt="搜索：来源与类型筛选、结果网格" width="230"> |
+| 详情 | 播放 |
+| <img src="docs/screenshots/03-detail.jpg" alt="详情：影片信息与线路选集" width="230"> | <img src="docs/screenshots/04-player.jpg" alt="播放：竖屏内嵌播放器" width="230"> |
+| 待看 | 设置 |
+| <img src="docs/screenshots/05-watchlist.jpg" alt="待看：收藏与观看记录" width="230"> | <img src="docs/screenshots/06-settings.jpg" alt="设置：站点、资源与备份" width="230"> |
 
-横屏全屏播放：点控制条右侧的全屏按钮进入，退出全屏或按返回都会恢复竖屏。
+<img src="docs/screenshots/07-fullscreen.jpg" alt="全屏播放" width="620">
 
-<img src="docs/screenshots/07-fullscreen.jpg" alt="全屏横屏播放：沉浸式控制层覆盖在画面上" width="620">
+## 下载
 
-## 当前版本
+到 [Releases](../../releases) 下载最新的 APK，安装即可。签名固定，后续版本可直接覆盖升级。
 
-`v0.14.0-M14`。仓库只存源码，不携带密钥、签名配置与 APK 产物；签名好的安装包放在 [Releases](../../releases)。
+首次使用：设置 → 添加观影站点 → 同步资源，之后回到首页搜索或浏览推荐。
 
-## 安装
+## 开发
 
-最省事的方式：到 Releases 下载 `app-release.apk`（已用固定 keystore 签名），传到手机直接安装。同一签名后续版本可以覆盖升级，不必卸载。
-
-自行构建并安装调试包：
+要求 Android Studio 2026.1.3+、JDK 21+、Android SDK 37。
 
 ```bash
-JAVA_HOME=<JBR 路径> ./gradlew :app:assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+JAVA_HOME=<JDK 路径> ./gradlew :app:assembleDebug
 ```
 
-- 调试包由 Android SDK 自动生成的 debug keystore 签名，可直接安装试用；但它带 `debuggable` 标志，且各台机器的 debug key 不同，不能跨机器覆盖升级。
-- `:app:assembleRelease` 会读取仓库根目录的 `signing.properties`（该文件已被 `.gitignore` 忽略）：
+`main` 为稳定分支，`dev` 为集成分支，功能以 `feature/<里程碑>` 开发后合入并打 tag。仓库只存源码，签名密钥与构建产物不入库。
 
-  ```properties
-  RELEASE_STORE_FILE=<keystore 绝对路径>
-  RELEASE_STORE_PASSWORD=...
-  RELEASE_KEY_ALIAS=...
-  RELEASE_KEY_PASSWORD=...
-  ```
+## 说明
 
-  文件不存在时构建自动跳过签名，产物为未签名包，clone 与 CI 都能照常构建。
-- 首次使用：进入「设置」添加观影站点（BASE_URL）→ 若该站点直连受限，在「网络代理」填写可用代理 → 点「同步资源」拉取采集源列表。没有同步过资源时搜索不会有任何结果，页面会直接提示原因。
-
-## 构建
-
-要求：Android Studio（2026.1.3+，AGP 9.3.3 pin）、JBR 21+、Android SDK 37。
-
-```bash
-# local.properties 指向本机 SDK
-echo "sdk.dir=<SDK 路径>" > local.properties
-JAVA_HOME=<JBR 路径> ./gradlew :app:assembleDebug
-```
-
-## 版本与分支
-
-- `main`：稳定发布；`dev`：日常集成；`feature/<里程碑>`：任务分支，完成后 `--ff-only` 合入
-- 里程碑 tag：`v0.0.1-M0` 脚手架 → `v0.1.0-M1` 搜索 → `v0.2.0-M2` 详情 → `v0.3.0-M3` 播放器桥 → `v0.4.0-M4` 首页 → `v0.5.0-M5` IPTV → `v0.6.0-M6` 打磨 → `v0.7.0-M7` UI 重做 → `v0.8.0-M8` 原生播放器 → `v0.9.0-M9` 搜索并入首页（同时移除 IPTV）→ `v0.10.0-M10` 边界与留白统一 → `v0.11.0-M11` 播放页交互收敛 → `v0.12.0-M12` 系统栏重复避让修复 → `v0.13.0-M13` 播放器控制层收紧 → `v0.14.0-M14` 签名发布与首轮真机回归修复
-- 设计与计划文档见 `docs/superpowers/`
-
-## 已知限制
-
-- 弹幕、跳片头尾未实现（原生播放器 v1 范围外）
-- 收藏与观看进度只存设备本地，不再与 Web 端 localStorage 互通（M8 移除同步桥）
+- 本项目不含服务端代码，数据采集与代理由站点实例提供
+- 收藏与观看记录仅保存在设备本地，多设备之间不同步
+- 暂未实现：弹幕、跳过片头片尾
