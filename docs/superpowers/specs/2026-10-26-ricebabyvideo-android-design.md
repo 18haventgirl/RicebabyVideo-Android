@@ -133,6 +133,16 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M4 | 首页豆瓣标签流 + 推荐 | `feature/m4-home` |
 | M5 | IPTV 频道列表 + 播放接入 | `feature/m5-iptv` |
 | M6 | M3 动效打磨、空态/错误态全覆盖、导出导入 | `feature/m6-polish` |
+| M7 | 设计系统与六屏 UI 重做（大标题导航、分段控件、描边卡片、骨架屏） | `feature/m7-ui-redesign` |
+| M8 | 原生播放器替代 WebView 播放页与同步桥 | `feature/m8-native-player` |
+| M9 | 搜索并入首页；按用户决定移除 IPTV 直播 | `feature/m9-home-search` |
+| M10 | 屏幕留白与边界 token 统一，抽公共分段控件 | `feature/m10-edge-polish` |
+| M11 | 全屏返回语义、播放页线路/选集与详情页同构 | `feature/m11-*`（直接提交于 main） |
+| M12 | 修复系统栏被重复避让导致的顶部大留白 | `feature/m12-inset-fix` |
+| M13 | 播放器控制层收紧（标题行贴顶、图标统一 20dp） | `feature/m13-player-controls` |
+
+> M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
+> M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
 
 每个里程碑交付后从 dev 合入 main 打 tag，作为用户"分配任务"的落点单位。
 

@@ -23,6 +23,23 @@
 
 <img src="docs/screenshots/07-fullscreen.jpg" alt="全屏横屏播放：沉浸式控制层覆盖在画面上" width="620">
 
+## 当前版本
+
+`v0.13.0-M13`。仓库只存源码，不携带密钥、签名配置与 APK 产物。
+
+## 安装
+
+自行构建并安装调试包（最常用）：
+
+```bash
+JAVA_HOME=<JBR 路径> ./gradlew :app:assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+- 调试包由 Android SDK 自动生成的 debug keystore 签名，可直接安装试用；但它带 `debuggable` 标志，且各台机器的 debug key 不同，不能跨机器覆盖升级。
+- `:app:assembleRelease` 的产物默认**未签名**（仓库刻意不携带密钥），需要正式分发时请自备 keystore 并配置 `signingConfig`，签名密钥不要提交进仓库。
+- 首次使用：进入「设置」添加观影站点（BASE_URL）→ 若该站点直连受限，在「网络代理」填写可用代理 → 点「同步资源」拉取采集源列表。
+
 ## 构建
 
 要求：Android Studio（2026.1.3+，AGP 9.3.3 pin）、JBR 21+、Android SDK 37。
