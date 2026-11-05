@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ricebaby.video.ui.common.VideoCard
+import com.ricebaby.video.ui.components.EmptyState
 import com.ricebaby.video.ui.components.PosterSkeleton
 import com.ricebaby.video.ui.theme.Dimens
 
@@ -221,6 +223,12 @@ fun SearchPanel(
             if (uiState.results.isEmpty() && uiState.phase == SearchPhase.Streaming) {
                 items((1..6).toList(), key = { "sk-$it" }) {
                     PosterSkeleton(modifier = Modifier.animateItem())
+                }
+            }
+            // 空态与错误态要留在页面上，不能只靠一闪而过的提示条
+            if (uiState.results.isEmpty() && uiState.phase != SearchPhase.Streaming && uiState.query.isNotBlank()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    EmptyState(uiState.message ?: "没有找到相关影片")
                 }
             }
             items(uiState.results, key = { it.key }) { scored ->

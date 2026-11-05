@@ -25,11 +25,13 @@
 
 ## 当前版本
 
-`v0.13.0-M13`。仓库只存源码，不携带密钥、签名配置与 APK 产物。
+`v0.14.0-M14`。仓库只存源码，不携带密钥、签名配置与 APK 产物；签名好的安装包放在 [Releases](../../releases)。
 
 ## 安装
 
-自行构建并安装调试包（最常用）：
+最省事的方式：到 Releases 下载 `app-release.apk`（已用固定 keystore 签名），传到手机直接安装。同一签名后续版本可以覆盖升级，不必卸载。
+
+自行构建并安装调试包：
 
 ```bash
 JAVA_HOME=<JBR 路径> ./gradlew :app:assembleDebug
@@ -37,8 +39,17 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 - 调试包由 Android SDK 自动生成的 debug keystore 签名，可直接安装试用；但它带 `debuggable` 标志，且各台机器的 debug key 不同，不能跨机器覆盖升级。
-- `:app:assembleRelease` 的产物默认**未签名**（仓库刻意不携带密钥），需要正式分发时请自备 keystore 并配置 `signingConfig`，签名密钥不要提交进仓库。
-- 首次使用：进入「设置」添加观影站点（BASE_URL）→ 若该站点直连受限，在「网络代理」填写可用代理 → 点「同步资源」拉取采集源列表。
+- `:app:assembleRelease` 会读取仓库根目录的 `signing.properties`（该文件已被 `.gitignore` 忽略）：
+
+  ```properties
+  RELEASE_STORE_FILE=<keystore 绝对路径>
+  RELEASE_STORE_PASSWORD=...
+  RELEASE_KEY_ALIAS=...
+  RELEASE_KEY_PASSWORD=...
+  ```
+
+  文件不存在时构建自动跳过签名，产物为未签名包，clone 与 CI 都能照常构建。
+- 首次使用：进入「设置」添加观影站点（BASE_URL）→ 若该站点直连受限，在「网络代理」填写可用代理 → 点「同步资源」拉取采集源列表。没有同步过资源时搜索不会有任何结果，页面会直接提示原因。
 
 ## 构建
 
@@ -53,7 +64,7 @@ JAVA_HOME=<JBR 路径> ./gradlew :app:assembleDebug
 ## 版本与分支
 
 - `main`：稳定发布；`dev`：日常集成；`feature/<里程碑>`：任务分支，完成后 `--ff-only` 合入
-- 里程碑 tag：`v0.0.1-M0` 脚手架 → `v0.1.0-M1` 搜索 → `v0.2.0-M2` 详情 → `v0.3.0-M3` 播放器桥 → `v0.4.0-M4` 首页 → `v0.5.0-M5` IPTV → `v0.6.0-M6` 打磨 → `v0.7.0-M7` UI 重做 → `v0.8.0-M8` 原生播放器 → `v0.9.0-M9` 搜索并入首页（同时移除 IPTV）→ `v0.10.0-M10` 边界与留白统一 → `v0.11.0-M11` 播放页交互收敛 → `v0.12.0-M12` 系统栏重复避让修复 → `v0.13.0-M13` 播放器控制层收紧
+- 里程碑 tag：`v0.0.1-M0` 脚手架 → `v0.1.0-M1` 搜索 → `v0.2.0-M2` 详情 → `v0.3.0-M3` 播放器桥 → `v0.4.0-M4` 首页 → `v0.5.0-M5` IPTV → `v0.6.0-M6` 打磨 → `v0.7.0-M7` UI 重做 → `v0.8.0-M8` 原生播放器 → `v0.9.0-M9` 搜索并入首页（同时移除 IPTV）→ `v0.10.0-M10` 边界与留白统一 → `v0.11.0-M11` 播放页交互收敛 → `v0.12.0-M12` 系统栏重复避让修复 → `v0.13.0-M13` 播放器控制层收紧 → `v0.14.0-M14` 签名发布与首轮真机回归修复
 - 设计与计划文档见 `docs/superpowers/`
 
 ## 已知限制

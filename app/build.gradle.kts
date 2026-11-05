@@ -1,9 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+}
+
+// 签名密钥放在仓库之外，只在本地 signing.properties 里给出路径与口令；
+// 文件不存在时（他人 clone、CI）直接跳过，release 仍可构建为未签名包。
+val signingProps = Properties().apply {
+    val f = rootProject.file("signing.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -14,15 +23,28 @@ android {
         applicationId = "com.ricebaby.video"
         minSdk = 26
         targetSdk = 37
-        versionCode = 13
-        versionName = "0.13.0-M13"
+        versionCode = 14
+        versionName = "0.14.0-M14"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        val storePath = signingProps.getProperty("RELEASE_STORE_FILE")
+        if (storePath != null) {
+            create("release") {
+                storeFile = file(storePath)
+                storePassword = signingProps.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = signingProps.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = signingProps.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 

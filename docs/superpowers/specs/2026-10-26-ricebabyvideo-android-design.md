@@ -140,6 +140,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M11 | 全屏返回语义、播放页线路/选集与详情页同构 | `feature/m11-*`（直接提交于 main） |
 | M12 | 修复系统栏被重复避让导致的顶部大留白 | `feature/m12-inset-fix` |
 | M13 | 播放器控制层收紧（标题行贴顶、图标统一 20dp） | `feature/m13-player-controls` |
+| M14 | 签名 Release 发布 + 全新安装首轮回归修复 | `feature/m14-release-signing` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -211,3 +212,10 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 全屏态复核：顶栏 y=38、底栏距屏幕底 36px，退出全屏正常回竖屏（`cur=1080x2424`）
   - 图标统一：抽出 `ControlButton`（40dp 触摸区 + 20dp 图标），替换原先 10 处各写一遍的 IconButton；图标视觉尺寸 24dp→20dp，触摸区仍 ≥40dp 不影响可达性；中央播放键 64dp→56dp
   - 顶栏/底栏留白改用 `Dimens.sm/xs` 统一节奏；README 播放页截图重拍
+- **2026-11-05 M14 完成**（tag `v0.14.0-M14`，35 单测绿）：签名 Release 发布，并用全新安装跑首轮回归
+  - **签名链路**：keystore 落在仓库外（PKCS12 / RSA 2048 / SHA256withRSA / 10950 天），仓库根目录 `signing.properties` 只存路径与口令且已被 `.gitignore` 覆盖；`app/build.gradle.kts` 读不到该文件就跳过签名，clone 与 CI 仍可构建未签名 release。产物 `app-release.apk` 17.6 MB（比 debug 小 7.7 MB），`apksigner verify` 通过 v2 方案，证书 DN `CN=RicebabyVideo, OU=Mobile, O=18haventgirl, C=CN`
+  - **首页不再卡在空态**：`HomeViewModel` 原来只在 `init` 里读一次 `activeInstance`，用户「先进首页→再去设置加站点→回首页」时永远停在「先在设置里添加并选择观影站点」。改为跟随站点选择变化（`map{baseUrl}.distinctUntilChanged()`）重新 bootstrap，并保留当前电影/剧集档位。实测：切到一个不可达站点首页转空，切回可用站点后无需重启即出标签流与海报
+  - **观看进度不再随进程丢失**：进度原先只在离开播放页时落库，播放中被安装更新/系统杀进程就整条历史不留（实测复现：播到 00:44 后 force-stop，历史为空）。轮询循环补「播放中每 10 秒持久化一次」。实测：播到 00:44 强杀重启，待看·历史出现该条且从 00:48 继续
+  - **退出全屏必回竖屏（复发根因）**：`onDispose` 还原的是进入前的 `requestedOrientation`，即 `UNSPECIFIED`；关闭自动旋转时系统保持当前横屏不转回。改为显式还原 `SCREEN_ORIENTATION_PORTRAIT`，并在清单里把 Activity 默认方向锁成竖屏（浏览界面本就按竖屏设计，播放全屏是唯一例外）。实测：进全屏 `2424x1080` → 点「退出全屏」/按返回均回到 `1080x2424`
+  - **搜索空态落到页面上**：无结果与未同步资源时原来只有一条一闪而过的 Snackbar，正文整块空白（用户视角＝坏了）。改为在结果网格内直接渲染 `EmptyState`（「没有找到相关影片」等资源侧文案）。实测：搜 `zzqqxx` 页面居中显示空态文案
+  - 其余回归项通过：站点探测「可连接 · 无需密码」、资源同步 78 个、搜索流式结果与来源/类型筛选、详情页线路/选集、线路切换、小窗（PiP 过渡帧已确认渲染真实画面）、倍速、收藏

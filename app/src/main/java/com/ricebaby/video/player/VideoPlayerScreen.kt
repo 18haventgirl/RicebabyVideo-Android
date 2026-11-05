@@ -163,11 +163,18 @@ fun VideoPlayerScreen(
     LaunchedEffect(player) {
         var lastPosition = -1L
         var stalledAt = 0L
+        var lastPersistAt = 0L
         while (true) {
             positionMs = player.currentPosition
             durationMs = player.duration.coerceAtLeast(0L)
             buffering = player.playbackState == Player.STATE_BUFFERING
             if (durationMs > 0) viewModel.updateProgress(positionMs, durationMs)
+            // 只在离开播放页时落库的话，进程被杀（安装更新/系统回收）就整条历史都不剩
+            val now = System.currentTimeMillis()
+            if (durationMs > 0 && player.playWhenReady && now - lastPersistAt >= 10_000) {
+                lastPersistAt = now
+                viewModel.persistProgress()
+            }
             // 代理线路可能整段卡死：位置长时间不推进就换线路，避免停在缓冲圈
             if (player.playWhenReady && positionMs == lastPosition) {
                 if (stalledAt == 0L) stalledAt = System.currentTimeMillis()
@@ -195,8 +202,6 @@ fun VideoPlayerScreen(
     // 全屏方向与系统栏：必须在退出全屏**和**离开播放页时还原，否则从全屏直接返回
     // 会把 Activity 永久留在横屏，上层页面全部跟着横过来
     DisposableEffect(fullscreen) {
-        val orientationBefore = activity?.requestedOrientation
-            ?: android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         if (fullscreen) {
             // 用 LANDSCAPE 而非 SENSOR_*/USER_*：关闭自动旋转时后两者会被系统降级为竖屏，
             // 点全屏没反应；LANDSCAPE 是硬性请求，任何旋转设置下都生效
@@ -207,7 +212,8 @@ fun VideoPlayerScreen(
             }
         }
         onDispose {
-            activity?.requestedOrientation = orientationBefore
+            // 还原成 PORTRAIT 而不是 UNSPECIFIED：关闭自动旋转时后者会保持当前（横屏）不转回来
+            activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             activity?.window?.let {
                 androidx.core.view.WindowCompat.getInsetsController(it, it.decorView)
                     .show(androidx.core.view.WindowInsetsCompat.Type.systemBars())

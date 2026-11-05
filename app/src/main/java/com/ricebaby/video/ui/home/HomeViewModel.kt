@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -72,23 +74,32 @@ class HomeViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     init {
+        // 站点往往是「进过一次首页」之后才在设置里添加的：只读一次 activeInstance 会让
+        // 新用户配置完回到首页仍停在空态，所以跟随站点选择变化自动重试。
         viewModelScope.launch {
-            internal.value = internal.value.copy(loading = true, error = null)
-            val base = settingsRepository.state.first().activeInstance?.baseUrl
-            if (base == null) {
-                internal.value = internal.value.copy(loading = false, error = "先在设置里添加并选择观影站点")
-                return@launch
-            }
-            val tags = douban.tags(base, "movie")
-            val recommendTag = RecommendTagMapper.bestTag(
-                historyDao.observeAll().first()
-                    .mapNotNull { it.typeName?.takeIf { n -> n.isNotBlank() } }
-                    .groupingBy { it }.eachCount(),
-            )
-            val initial = if (recommendTag != null) RECOMMEND_LABEL else tags.firstOrNull().orEmpty()
-            internal.value = internal.value.copy(tags = tags, activeTag = initial)
-            if (initial.isNotEmpty()) fetch(base, if (initial == RECOMMEND_LABEL) recommendTag!! else initial, replace = true)
+            settingsRepository.state
+                .map { it.activeInstance?.baseUrl }
+                .distinctUntilChanged()
+                .collect { base -> bootstrap(base) }
         }
+    }
+
+    private suspend fun bootstrap(base: String?) {
+        val isTv = internal.value.isTv
+        internal.value = Internal(isTv = isTv, loading = true)
+        if (base == null) {
+            internal.value = internal.value.copy(loading = false, error = "先在设置里添加并选择观影站点")
+            return
+        }
+        val tags = douban.tags(base, if (isTv) "tv" else "movie")
+        val recommendTag = RecommendTagMapper.bestTag(
+            historyDao.observeAll().first()
+                .mapNotNull { it.typeName?.takeIf { n -> n.isNotBlank() } }
+                .groupingBy { it }.eachCount(),
+        )
+        val initial = if (recommendTag != null) RECOMMEND_LABEL else tags.firstOrNull().orEmpty()
+        internal.value = internal.value.copy(tags = tags, activeTag = initial)
+        if (initial.isNotEmpty()) fetch(base, if (initial == RECOMMEND_LABEL) recommendTag!! else initial, replace = true)
     }
 
     private suspend fun loadRecommend(base: String) {
