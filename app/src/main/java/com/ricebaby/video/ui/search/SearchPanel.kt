@@ -54,6 +54,7 @@ import androidx.navigation.NavHostController
 import com.ricebaby.video.ui.common.VideoCard
 import com.ricebaby.video.ui.components.EmptyState
 import com.ricebaby.video.ui.components.PosterSkeleton
+import com.ricebaby.video.ui.components.SelectChip
 import com.ricebaby.video.ui.theme.Dimens
 
 /** 首页展开的搜索面板：输入、历史、来源/类型筛选与流式结果 */
@@ -149,17 +150,9 @@ fun SearchPanel(
                 modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
                 uiState.history.forEach { item ->
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(Dimens.pillCorner))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable {
-                                viewModel.onQueryChange(item)
-                                viewModel.submit(item)
-                            }
-                            .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
-                    ) {
-                        Text(item, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SelectChip(label = item, selected = false) {
+                        viewModel.onQueryChange(item)
+                        viewModel.submit(item)
                     }
                 }
             }
@@ -288,21 +281,5 @@ fun SectionLabel(text: String, action: Pair<String, () -> Unit>? = null) {
 
 @Composable
 fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(Dimens.pillCorner))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surface,
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = Dimens.md, vertical = Dimens.sm),
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    SelectChip(label = text, selected = selected, onClick = onClick)
 }

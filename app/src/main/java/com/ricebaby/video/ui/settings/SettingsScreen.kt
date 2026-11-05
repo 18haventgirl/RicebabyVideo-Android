@@ -114,7 +114,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("视频资源：${uiState.sourceCount} 个", style = MaterialTheme.typography.titleSmall)
+                        Text("视频资源：${uiState.sourceCount} 个", style = MaterialTheme.typography.titleMedium)
                         uiState.syncMessage?.let {
                             Text(
                                 it,
@@ -257,7 +257,7 @@ private fun InstanceCard(
 private fun BackupCard(message: String?, onExport: () -> Unit, onImport: () -> Unit) {
     AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.sm)) {
         Column(modifier = Modifier.padding(Dimens.md), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-            Text("数据备份", style = MaterialTheme.typography.titleSmall)
+            Text("数据备份", style = MaterialTheme.typography.titleMedium)
             Text(
                 "站点、资源、收藏与观看记录可导出为 JSON 文件，重装后一键恢复。",
                 style = MaterialTheme.typography.bodySmall,
@@ -285,7 +285,7 @@ private fun ProxyCard(
     var port by remember(proxyPort) { mutableStateOf(if (proxyPort > 0) proxyPort.toString() else "") }
     AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.sm)) {
         Column(modifier = Modifier.padding(Dimens.md), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-            Text("网络代理（可选）", style = MaterialTheme.typography.titleSmall)
+            Text("网络代理（可选）", style = MaterialTheme.typography.titleMedium)
             Text(
                 "部分资源直连受限时填写，如 127.0.0.1:7890；留空停用。",
                 style = MaterialTheme.typography.bodySmall,

@@ -1,19 +1,10 @@
 package com.ricebaby.video.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import com.ricebaby.video.ui.theme.Dimens
 
 /** 线路选择：详情页与播放页共用，换行完整展示并带选中态 */
@@ -27,20 +18,16 @@ fun LineChipRow(
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-        verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+        verticalArrangement = Arrangement.spacedBy(Dimens.sm),
         modifier = modifier,
     ) {
         lines.forEachIndexed { index, name ->
-            FilterChip(
-                selected = index == selected,
-                onClick = { onSelect(index) },
-                label = { Text(name) },
-            )
+            SelectChip(label = name, selected = index == selected, onClick = { onSelect(index) })
         }
     }
 }
 
-/** 选集：与线路同宽同圆角的一组图块，选中填充 primaryContainer */
+/** 选集：与线路、搜索筛选完全同款的胶囊 */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EpisodeChipRow(
@@ -51,28 +38,11 @@ fun EpisodeChipRow(
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-        verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+        verticalArrangement = Arrangement.spacedBy(Dimens.sm),
         modifier = modifier,
     ) {
         episodes.forEachIndexed { index, name ->
-            val active = index == selected
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(Dimens.pillCorner))
-                    .background(
-                        if (active) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    )
-                    .clickable { onSelect(index) }
-                    .padding(horizontal = Dimens.md, vertical = Dimens.sm),
-            ) {
-                Text(
-                    name,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (active) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            SelectChip(label = name, selected = index == selected, onClick = { onSelect(index) })
         }
     }
 }

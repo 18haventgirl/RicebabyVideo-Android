@@ -27,9 +27,9 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -57,6 +57,7 @@ import androidx.navigation.NavHostController
 import com.ricebaby.video.ui.components.PosterItem
 import com.ricebaby.video.ui.components.PosterSkeleton
 import com.ricebaby.video.ui.components.SegmentedToggle
+import com.ricebaby.video.ui.components.SelectChip
 import com.ricebaby.video.ui.search.SearchPanel
 import com.ricebaby.video.ui.search.SearchViewModel
 import com.ricebaby.video.ui.theme.Dimens
@@ -162,24 +163,11 @@ private fun BrowseFeed(
                     modifier = Modifier.weight(1f),
                 ) {
                     uiState.tags.forEach { tag ->
-                        val selected = tag == uiState.activeTag
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(Dimens.pillCorner))
-                                .background(
-                                    if (selected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                )
-                                .clickable { viewModel.setTag(tag) }
-                                .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
-                        ) {
-                            Text(
-                                tag,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        SelectChip(
+                            label = tag,
+                            selected = tag == uiState.activeTag,
+                            onClick = { viewModel.setTag(tag) },
+                        )
                     }
                 }
                 Text(
@@ -314,10 +302,10 @@ private fun TagManagerSheet(
                 ) {
                     uiState.serverTags.forEach { tag ->
                         val hidden = tag in uiState.hiddenTags
-                        FilterChip(
+                        SelectChip(
+                            label = tag,
                             selected = !hidden,
-                            onClick = { viewModel.setTagHidden(tag, !hidden) },
-                            label = { Text(tag) },
+                            onClick = { viewModel.setTagHidden(tag, hidden) },
                         )
                     }
                 }
@@ -341,7 +329,17 @@ private fun TagManagerSheet(
                         InputChip(
                             selected = tag == uiState.activeTag,
                             onClick = { viewModel.setTag(tag) },
-                            label = { Text(tag) },
+                            shape = RoundedCornerShape(Dimens.pillCorner),
+                            colors = InputChipDefaults.inputChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                            elevation = null,
+                            border = null,
+                            label = { Text(tag, style = MaterialTheme.typography.labelMedium) },
                             trailingIcon = {
                                 Icon(
                                     Icons.Outlined.Close,

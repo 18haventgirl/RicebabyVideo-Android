@@ -142,6 +142,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M13 | 播放器控制层收紧（标题行贴顶、图标统一 20dp） | `feature/m13-player-controls` |
 | M14 | 签名 Release 发布 + 全新安装首轮回归修复 | `feature/m14-release-signing` |
 | M15 | 首页标签体验与竞态、搜索筛选折叠、全屏边到边与滑动手势 | `feature/m15-feed-gestures` |
+| M15b | 详情页顶栏双重避让修复 | `feature/m15b-detail-inset` |
+| M16 | 全 App 胶囊统一与字阶收敛 | `feature/m16-chip-type` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -234,3 +236,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 根因：M12 只把内层 `Scaffold` 的 `contentWindowInsets` 归零，漏了 `TopAppBar` 自己默认的 `windowInsets`（状态栏 + 顶栏内衬）—— 外层已避让 54dp，顶栏又加 54dp，标题行落到 126dp。全站只有详情页用 TopAppBar，所以此前逐页量「标题 top」时没覆盖到它
   - 修法：`TopAppBar(windowInsets = WindowInsets(0,0,0,0))`。实测返回键 bounds 由 `[43,337]` 上移到 `[43,195]`（195px ≈ 54dp 状态栏 + 顶栏自身内边距）
   - 发布处理：v0.15.0-M15 置为预发布并在说明里指向新版，代码 tag 保留不删
+- **2026-11-05 M16 完成**（tag `v0.16.0-M16`，41 单测绿）：用户要求详情页/播放页的线路展示向搜索结果的样式统一，并顺带收敛字体层级
+  - **胶囊统一**：新增 `ui/components/SelectChip.kt` —— 官方 M3 `FilterChip` 去掉描边（`border = null`）与阴影（`elevation = null`），圆角 `pillCorner`，配色 surfaceVariant@0.5 / 选中 primaryContainer，文案固定 labelMedium。线路（`LineChipRow`）、选集（`EpisodeChipRow`）、搜索来源与类型筛选（原手写 `FilterPill` 改为薄封装）、搜索历史、首页标签、标签管理面板全部换成它；管理面板里带删除钮的自定义标签用官方 `InputChip` 并配同一套 shape/colors。material3 1.4.0 的 `FilterChip` 已无 `checkmark` 参数（选中态靠配色），已查证源码
+  - **字阶补齐**：`Type.kt` 原来漏定义 `titleSmall` 与 `labelLarge`，它们悄悄回落到 M3 默认值（14 Medium / 14 Medium），与自定义层混排。现补 `titleSmall = 14 SemiBold`、`labelLarge = 14 Medium`，并把 `bodySmall` 从 13sp 收到 12sp/17lh 对齐标准 caption；文件头写明分工：页名 headlineMedium、分区标题 titleMedium、卡片内小标题 titleSmall、条目正文 bodyLarge/bodyMedium、辅助信息 bodySmall、胶囊 labelMedium、按钮 labelLarge
+  - **按分工归位**：设置页三张卡片标题（视频资源 / 数据备份 / 网络代理）titleSmall→titleMedium；详情页「播放 · 集名」titleMedium→labelLarge（按钮文案）；其余分区标题统一 titleMedium
+  - 实测：首页标签、搜索筛选、详情线路与选集的胶囊同高同圆角同配色，设置页卡片标题层级一致

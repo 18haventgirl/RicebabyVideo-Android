@@ -195,7 +195,7 @@ fun DetailScreen(
                             modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.md).height(52.dp),
                         ) {
                             val ep = episodes.getOrNull(uiState.selectedEpisode)
-                            Text(if (ep != null) "播放 · ${ep.name}" else "播放", style = MaterialTheme.typography.titleMedium)
+                            Text(if (ep != null) "播放 · ${ep.name}" else "播放", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
