@@ -14,8 +14,6 @@ class BackupCodecTest {
             instances = listOf(SiteInstance("i1", "主站", "https://a.com")),
             activeInstanceId = "i1",
             passwords = mapOf("i1" to "pw"),
-            proxyHost = "127.0.0.1",
-            proxyPort = 7890,
             favorites = listOf(FavoriteEntity(source = "s1", vodId = "9", name = "片", addedAt = 1)),
             history = emptyList(),
             searchHistory = emptyList(),

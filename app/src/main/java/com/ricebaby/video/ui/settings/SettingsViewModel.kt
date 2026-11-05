@@ -33,7 +33,6 @@ data class SettingsUiState(
     val lastAddInvalidUrl: Boolean = false,
     val sourceCount: Int = 0,
     val syncMessage: String? = null,
-    val proxyMessage: String? = null,
     val backupMessage: String? = null,
 )
 
@@ -67,18 +66,6 @@ class SettingsViewModel @Inject constructor(
 
     fun savePassword(id: String, password: String) = viewModelScope.launch {
         settingsRepository.setPassword(id, password)
-    }
-
-    fun saveProxy(host: String, portText: String) = viewModelScope.launch {
-        val port = portText.trim().toIntOrNull()
-        if (host.isNotBlank() && (port == null || port !in 1..65535)) {
-            transient.value = transient.value.copy(proxyMessage = "端口需为 1-65535")
-            return@launch
-        }
-        settingsRepository.setProxy(host.trim(), port ?: 0)
-        transient.value = transient.value.copy(
-            proxyMessage = if (host.isBlank() || port == 0) "已停用代理" else "已启用代理 ${host.trim()}:$port",
-        )
     }
 
     fun syncSources() = viewModelScope.launch {

@@ -1,6 +1,5 @@
 package com.ricebaby.video.di
 
-import com.ricebaby.video.net.AppProxySelector
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,8 +13,7 @@ import okhttp3.OkHttpClient
 object NetworkModule {
     @Provides
     @Singleton
-    fun okHttpClient(proxySelector: AppProxySelector): OkHttpClient = OkHttpClient.Builder()
-        .proxySelector(proxySelector)
+    fun okHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)

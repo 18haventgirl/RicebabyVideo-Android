@@ -13,8 +13,6 @@ data class BackupPayload(
     val instances: List<SiteInstance> = emptyList(),
     val activeInstanceId: String? = null,
     val passwords: Map<String, String> = emptyMap(),
-    val proxyHost: String = "",
-    val proxyPort: Int = 0,
     val favorites: List<FavoriteEntity> = emptyList(),
     val history: List<HistoryEntity> = emptyList(),
     val searchHistory: List<SearchHistoryEntity> = emptyList(),

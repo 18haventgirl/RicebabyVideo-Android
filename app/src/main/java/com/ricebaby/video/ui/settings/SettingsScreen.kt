@@ -140,14 +140,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         onImport = { importLauncher.launch(arrayOf("application/json")) },
                     )
                 }
-                item {
-                    ProxyCard(
-                        proxyHost = uiState.settings.proxyHost,
-                        proxyPort = uiState.settings.proxyPort,
-                        message = uiState.proxyMessage,
-                        onSave = viewModel::saveProxy,
-                    )
-                }
                 if (uiState.settings.instances.isEmpty()) {
                     item {
                         Text(
@@ -268,53 +260,6 @@ private fun BackupCard(message: String?, onExport: () -> Unit, onImport: () -> U
                 TextButton(onClick = onImport) { Text("导入恢复") }
                 message?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProxyCard(
-    proxyHost: String,
-    proxyPort: Int,
-    message: String?,
-    onSave: (String, String) -> Unit,
-) {
-    var host by remember(proxyHost) { mutableStateOf(proxyHost) }
-    var port by remember(proxyPort) { mutableStateOf(if (proxyPort > 0) proxyPort.toString() else "") }
-    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = Dimens.sm)) {
-        Column(modifier = Modifier.padding(Dimens.md), verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-            Text("网络代理（可选）", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "部分资源直连受限时填写，如 127.0.0.1:7890；留空停用。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.sm)) {
-                TextField(
-                    value = host,
-                    onValueChange = { host = it },
-                    label = { Text("地址") },
-                    singleLine = true,
-                    modifier = Modifier.weight(2f),
-                )
-                TextField(
-                    value = port,
-                    onValueChange = { port = it },
-                    label = { Text("端口") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { onSave(host, port) }) { Text("保存代理") }
-                message?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
         }

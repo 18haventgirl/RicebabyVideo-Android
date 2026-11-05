@@ -146,6 +146,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M16 | 全 App 胶囊统一与字阶收敛 | `feature/m16-chip-type` |
 | M16b | 线路默认折叠、间距收紧、管理按钮对齐 | `feature/m16b-line-collapse` |
 | M17 | 更名「海里影视」、自绘进度条、图标与安全区适配 | `feature/m17-brand-seekbar` |
+| M18 | 移除应用内网络代理设置 | `feature/m18-drop-inapp-proxy` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -255,3 +256,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **更名**：`app_name` 改为「海里影视」，README 主标题同步；`applicationId` 与包名保持 `com.ricebaby.video` 不变（改了会断掉覆盖升级），GitHub 仓库名暂未改
   - **图标**：用桌面的 `海里海浪播放图标.png`（1254²，navy #041C3D + 米色 #FEF2DA）。踩到的坑：① 源图圆角外是纯白，按 GraphicsPath 圆角裁剪时半径只要小于原图的 18.8% 就会带进一圈白弧，最终改为「圆角裁剪 + 近白像素换成 navy」双保险；② 自适应图标的可见圆只有画布的 66%，画面按 84%/88% 摆放都会切掉「海里」，按公式解到 52% 并上移 8% 才完整；③ PowerShell 里 `Add-Type` 定义的类与 `GraphicsPath.AddArc` 参数绑定不稳，改用 JBR 的 `java File.java` 单文件模式跑 Java2D。产出 `mipmap-{m,h,2h,3h,4}dpi/ic_launcher_foreground.png` + 纯色背景层 + 单色（三角形）蒙版层
   - 实测：模拟器启动器图标为 navy 圆面 + 海浪播放标 + 完整「海里」二字，无白角、无切字
+- **2026-11-05 M18 完成**（tag `v0.18.0-M18`，41 单测绿）：按用户要求删掉应用内网络代理设置
+  - 删除范围（不留死代码）：设置页 `ProxyCard`、`SettingsViewModel.saveProxy` 与 `proxyMessage`、`AppSettings.proxyHost/proxyPort/proxyEnabled`、`SettingsRepository.setProxy` 与两个 DataStore 键、`net/AppProxySelector`、`NetworkModule` 的 `proxySelector`、`RicebabyVideoApp.onCreate` 里的代理热更新、备份负载里的两个字段
+  - 保留：站点侧 `/api/proxy` 取流（`StreamUrls.proxyStreamUrl`）与「站点访问密码」—— 与被删功能无关
+  - 兼容：旧备份 JSON 里残留的 proxy 字段靠 `ignoreUnknownKeys` 吸收；旧 DataStore 里的键不再读取，无需迁移
+  - 验证：测试机原本靠应用内代理访问站点，改走系统级代理（`settings put global http_proxy 127.0.0.1:7890` + `adb reverse`）后首页标签流、搜索、设置页均正常；设置页只剩观影站点 / 数据备份 / 站点列表三块，截图重拍

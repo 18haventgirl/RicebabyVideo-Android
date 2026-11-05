@@ -23,8 +23,6 @@ class BackupRepository @Inject constructor(
             instances = settings.instances,
             activeInstanceId = settings.activeInstanceId,
             passwords = settings.passwords,
-            proxyHost = settings.proxyHost,
-            proxyPort = settings.proxyPort,
             favorites = favoriteDao.observeAll().first(),
             history = historyDao.observeAll().first(),
             searchHistory = searchHistoryDao.observeRecent().first(),
@@ -35,7 +33,6 @@ class BackupRepository @Inject constructor(
     suspend fun applyPayload(payload: BackupPayload): Int {
         settingsRepository.restoreInstances(payload.instances, payload.activeInstanceId)
         payload.passwords.forEach { (id, pw) -> settingsRepository.setPassword(id, pw) }
-        settingsRepository.setProxy(payload.proxyHost, payload.proxyPort)
         favoriteDao.clearAll()
         favoriteDao.upsertAll(payload.favorites)
         historyDao.clearAll()
