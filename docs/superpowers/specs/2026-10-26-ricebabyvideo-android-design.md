@@ -196,3 +196,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **顶部大留白**：根因是系统栏被避让了两次 —— 外层 AppRoot 的 Scaffold 已用 innerPadding 处理状态栏与底部导航，首页/待看/设置/详情四个页面又各自套了一层 Scaffold，M3 的 Scaffold 只 pad 不 consume，于是状态栏 54dp 被叠加成 108dp。实测「米宝影视」标题 top 由 120dp 降到 66dp（54 状态栏 + 12 自身留白），待看与设置同样从 120dp → 66dp。修法：四处内层 Scaffold 统一 `contentWindowInsets = WindowInsets(0,0,0,0)`
   - **分段控件白色块**：抽组件时把选中块写成 `matchParentSize()`（宽度=整个控件，靠父级 clip 裁切），切换时表现为"白色从一侧擦过来"而不是一格在滑动；改成固定控件高度 `Dimens.segmentHeight = 36dp` + 滑块宽度 = 内缩后均分的一格，并与文字格共用同一几何。中途我把滑块写成 `fillMaxHeight()`，Column 把剩余全高传进来导致白色拉到屏幕底部，已由截图抓出并修正
   - README 首页/搜索/详情/待看/设置五张截图重拍（旧图仍带修复前的顶部大留白）
+- **2026-11-05 M13 完成**（tag `v0.13.0-M13`，35 单测绿）：播放器控制层布局收紧（用户指出标题行靠下、图标偏大）
+  - 根因：播放页顶栏与底栏各自又加了一次 `systemBarsPadding()`，而外层 AppRoot 的 Scaffold 已避让状态栏 → 竖屏下顶栏被推到画面正中（图标 y=337，画面区 142–740）。去掉这两处重复避让后顶栏回到 y=180（贴画面顶边），底栏 y=661（距画面底边 26px）
+  - 全屏态复核：顶栏 y=38、底栏距屏幕底 36px，退出全屏正常回竖屏（`cur=1080x2424`）
+  - 图标统一：抽出 `ControlButton`（40dp 触摸区 + 20dp 图标），替换原先 10 处各写一遍的 IconButton；图标视觉尺寸 24dp→20dp，触摸区仍 ≥40dp 不影响可达性；中央播放键 64dp→56dp
+  - 顶栏/底栏留白改用 `Dimens.sm/xs` 统一节奏；README 播放页截图重拍

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -305,39 +304,36 @@ fun VideoPlayerScreen(
             if (!isPlaying && !buffering && !state.loading && controlsVisible && !inPip) {
                 IconButton(
                     onClick = { if (player.isPlaying) player.pause() else player.play() },
-                    modifier = Modifier.align(Alignment.Center).size(64.dp)
+                    modifier = Modifier.align(Alignment.Center).size(56.dp)
                         .clip(androidx.compose.foundation.shape.CircleShape)
                         .background(Color.Black.copy(alpha = 0.45f)),
                 ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = "播放", tint = Color.White, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Filled.PlayArrow, contentDescription = "播放", tint = Color.White, modifier = Modifier.size(30.dp))
                 }
             }
 
-            // 顶部栏
+            // 顶部栏：外层 Scaffold 已避让状态栏，这里再加 systemBarsPadding 会把整行压到画面中间
             if (controlsVisible && !inPip) {
                 Row(
                     modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)))
-                        .systemBarsPadding()
-                        .padding(horizontal = Dimens.md, vertical = Dimens.sm),
+                        .padding(start = Dimens.sm, end = Dimens.sm, top = Dimens.xs, bottom = Dimens.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = {
-                        if (fullscreen) {
-                            // 全屏时左上角与返回键都表示"回到竖屏继续播放"，再按一次才离开播放页
-                            fullscreen = false
-                        } else {
-                            viewModel.persistProgress()
-                            navController.popBackStack()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = if (fullscreen) Icons.Outlined.FullscreenExit
-                            else Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = if (fullscreen) "退出全屏" else "返回",
-                            tint = Color.White,
-                        )
-                    }
+                    ControlButton(
+                        onClick = {
+                            if (fullscreen) {
+                                // 全屏时左上角与返回键都表示"回到竖屏继续播放"，再按一次才离开播放页
+                                fullscreen = false
+                            } else {
+                                viewModel.persistProgress()
+                                navController.popBackStack()
+                            }
+                        },
+                        contentDescription = if (fullscreen) "退出全屏" else "返回",
+                        icon = if (fullscreen) Icons.Outlined.FullscreenExit
+                        else Icons.AutoMirrored.Outlined.ArrowBack,
+                    )
                     Text(
                         buildString {
                             append(state.title)
@@ -351,26 +347,26 @@ fun VideoPlayerScreen(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = viewModel::toggleFavorite) {
-                        Icon(
-                            imageVector = if (state.isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
-                            contentDescription = "收藏",
-                            tint = if (state.isFavorite) MaterialTheme.colorScheme.tertiary else Color.White,
-                        )
-                    }
-                    IconButton(onClick = { enterPip() }) {
-                        Icon(Icons.Outlined.PictureInPictureAlt, contentDescription = "小窗", tint = Color.White)
-                    }
+                    ControlButton(
+                        onClick = viewModel::toggleFavorite,
+                        contentDescription = "收藏",
+                        icon = if (state.isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
+                        tint = if (state.isFavorite) MaterialTheme.colorScheme.tertiary else Color.White,
+                    )
+                    ControlButton(
+                        onClick = { enterPip() },
+                        contentDescription = "小窗",
+                        icon = Icons.Outlined.PictureInPictureAlt,
+                    )
                 }
             }
 
-            // 底部控制条
+            // 底部控制条：同样不再叠加 systemBarsPadding，控制层贴着画面底边
             if (controlsVisible && !inPip) {
                 Column(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))))
-                        .systemBarsPadding()
-                        .padding(horizontal = Dimens.md),
+                        .padding(horizontal = Dimens.sm, vertical = Dimens.xs),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(fmt(positionMs), style = MaterialTheme.typography.labelMedium, color = Color.White)
@@ -393,24 +389,28 @@ fun VideoPlayerScreen(
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { if (isPlaying) player.pause() else player.play() }) {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                                contentDescription = if (isPlaying) "暂停" else "播放",
-                                tint = Color.White,
-                            )
-                        }
-                        IconButton(onClick = { player.seekTo((player.currentPosition - 10_000).coerceAtLeast(0)) }) {
-                            Icon(Icons.Filled.Replay10, contentDescription = "快退 10 秒", tint = Color.White)
-                        }
-                        IconButton(onClick = { player.seekTo(player.currentPosition + 10_000) }) {
-                            Icon(Icons.Filled.Forward10, contentDescription = "快进 10 秒", tint = Color.White)
-                        }
+                        ControlButton(
+                            onClick = { if (isPlaying) player.pause() else player.play() },
+                            contentDescription = if (isPlaying) "暂停" else "播放",
+                            icon = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        )
+                        ControlButton(
+                            onClick = { player.seekTo((player.currentPosition - 10_000).coerceAtLeast(0)) },
+                            contentDescription = "快退 10 秒",
+                            icon = Icons.Filled.Replay10,
+                        )
+                        ControlButton(
+                            onClick = { player.seekTo(player.currentPosition + 10_000) },
+                            contentDescription = "快进 10 秒",
+                            icon = Icons.Filled.Forward10,
+                        )
                         Spacer(Modifier.weight(1f))
                         Box {
-                            IconButton(onClick = { speedMenuOpen = true }) {
-                                Icon(Icons.Outlined.Speed, contentDescription = "倍速", tint = Color.White)
-                            }
+                            ControlButton(
+                                onClick = { speedMenuOpen = true },
+                                contentDescription = "倍速",
+                                icon = Icons.Outlined.Speed,
+                            )
                             if (speed != 1f) {
                                 Text(
                                     "${speed}x",
@@ -442,13 +442,11 @@ fun VideoPlayerScreen(
                                 }
                             }
                         }
-                        IconButton(onClick = { fullscreen = !fullscreen }) {
-                            Icon(
-                                imageVector = if (fullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
-                                contentDescription = if (fullscreen) "退出全屏" else "全屏",
-                                tint = Color.White,
-                            )
-                        }
+                        ControlButton(
+                            onClick = { fullscreen = !fullscreen },
+                            contentDescription = if (fullscreen) "退出全屏" else "全屏",
+                            icon = if (fullscreen) Icons.Outlined.FullscreenExit else Icons.Outlined.Fullscreen,
+                        )
                     }
                 }
             }
@@ -521,6 +519,19 @@ fun VideoPlayerScreen(
                 }
             }
         }
+    }
+}
+
+/** 控制层统一规格：40dp 触摸区 + 20dp 图标，避免每个按钮各写一遍尺寸 */
+@Composable
+private fun ControlButton(
+    onClick: () -> Unit,
+    contentDescription: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color = Color.White,
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
+        Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(20.dp))
     }
 }
 
