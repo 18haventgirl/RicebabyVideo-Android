@@ -13,11 +13,15 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.Row
+
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +29,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.outlined.BrightnessHigh
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
@@ -40,6 +46,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -58,6 +65,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlin.math.max
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -86,6 +94,7 @@ private val SPEEDS = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
 @Composable
 fun VideoPlayerScreen(
     navController: NavHostController,
+    onFullscreenChange: (Boolean) -> Unit = {},
     viewModel: VideoPlayerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -105,6 +114,17 @@ fun VideoPlayerScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var toast by remember { mutableStateOf<String?>(null) }
 
+    // 滑动手势：0 未识别 / 1 横向调进度 / 2 纵向调亮度音量
+    var dragAxis by remember { mutableIntStateOf(0) }
+    var dragStartX by remember { mutableFloatStateOf(0f) }
+    var dragStartY by remember { mutableFloatStateOf(0f) }
+    var dragAccumX by remember { mutableFloatStateOf(0f) }
+    var dragAccumY by remember { mutableFloatStateOf(0f) }
+    var seekBaseMs by remember { mutableLongStateOf(0L) }
+    var seekPreviewMs by remember { mutableLongStateOf(0L) }
+    var hudKind by remember { mutableIntStateOf(0) } // 1 亮度 2 音量 3 进度
+    var hudValue by remember { mutableFloatStateOf(0f) }
+
     val player = remember {
         viewModel.createPlayer().apply {
             addListener(object : Player.Listener {
@@ -120,7 +140,20 @@ fun VideoPlayerScreen(
         onDispose {
             viewModel.updateProgress(player.currentPosition, player.duration.coerceAtLeast(0L))
             viewModel.persistProgress()
+            // 手势调过的亮度属于这个 Window，不还原会带着离开播放页
+            activity?.window?.attributes?.let { lp ->
+                lp.screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                activity?.window?.attributes = lp
+            }
             player.release()
+        }
+    }
+
+    // 手势反馈浮层：抬手后短暂停留再消失
+    LaunchedEffect(hudKind, hudValue, seekPreviewMs) {
+        if (hudKind != 0) {
+            delay(700)
+            hudKind = 0
         }
     }
 
@@ -199,14 +232,21 @@ fun VideoPlayerScreen(
         if (toast != null) { delay(2200); toast = null }
     }
 
-    // 全屏方向与系统栏：必须在退出全屏**和**离开播放页时还原，否则从全屏直接返回
+    // 全屏方向、刘海与系统栏：必须在退出全屏**和**离开播放页时还原，否则从全屏直接返回
     // 会把 Activity 永久留在横屏，上层页面全部跟着横过来
+    LaunchedEffect(fullscreen) { onFullscreenChange(fullscreen) }
     DisposableEffect(fullscreen) {
+        val window = activity?.window
+        val previousWindowBg = window?.decorView?.background
         if (fullscreen) {
             // 用 LANDSCAPE 而非 SENSOR_*/USER_*：关闭自动旋转时后两者会被系统降级为竖屏，
             // 点全屏没反应；LANDSCAPE 是硬性请求，任何旋转设置下都生效
             activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            activity?.window?.let {
+            window?.let { w -> w.attributes = w.attributes.apply { layoutInDisplayCutoutMode = cutoutMode(extend = true) } }
+            // 状态栏/摄像头一侧露出的是**窗口背景**（浅色主题下就是一条白边），decor 视图盖不住它
+            window?.decorView?.setBackgroundColor(android.graphics.Color.BLACK)
+            window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK))
+            window?.let {
                 androidx.core.view.WindowCompat.getInsetsController(it, it.decorView)
                     .hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             }
@@ -214,7 +254,10 @@ fun VideoPlayerScreen(
         onDispose {
             // 还原成 PORTRAIT 而不是 UNSPECIFIED：关闭自动旋转时后者会保持当前（横屏）不转回来
             activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            activity?.window?.let {
+            window?.let { w -> w.attributes = w.attributes.apply { layoutInDisplayCutoutMode = cutoutMode(extend = false) } }
+            window?.decorView?.background = previousWindowBg
+            if (previousWindowBg != null) window?.setBackgroundDrawable(previousWindowBg)
+            window?.let {
                 androidx.core.view.WindowCompat.getInsetsController(it, it.decorView)
                     .show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             }
@@ -236,17 +279,14 @@ fun VideoPlayerScreen(
         }
     }
 
-    var dragMode by remember { mutableIntStateOf(0) } // 0 none, 1 brightness(left), 2 volume(right)
-    var dragStartY by remember { mutableFloatStateOf(0f) }
-
-    val videoModifier = if (fullscreen) {
-        Modifier.fillMaxSize().background(Color.Black)
+    val fullscreenModifier = if (fullscreen) {
+        Modifier.fillMaxSize()
     } else {
-        Modifier.fillMaxWidth().aspectRatio(16f / 9f).background(Color.Black)
-    }
+        Modifier.fillMaxWidth().aspectRatio(16f / 9f)
+    }.background(Color.Black)
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        Box(modifier = videoModifier.pointerInput(Unit) {
+        Box(modifier = fullscreenModifier.pointerInput(Unit) {
             detectTapGestures(
                 onTap = {
                     if (inPip) {
@@ -261,31 +301,59 @@ fun VideoPlayerScreen(
                     controlsVisible = true
                 },
             )
-        }.pointerInput(Unit) {
+        }.pointerInput(durationMs) {
             val audio = context.getSystemService(AudioManager::class.java)
             detectDragGestures(
                 onDragStart = { offset ->
-                    dragMode = if (offset.x < size.width / 2) 1 else 2
+                    dragAxis = 0
+                    dragAccumX = 0f
+                    dragAccumY = 0f
+                    dragStartX = offset.x
                     dragStartY = offset.y
+                    seekBaseMs = player.currentPosition
+                    seekPreviewMs = seekBaseMs
                 },
-                onDragEnd = { dragMode = 0 },
-                onDragCancel = { dragMode = 0 },
+                onDragEnd = {
+                    if (dragAxis == 1 && durationMs > 0) player.seekTo(seekPreviewMs)
+                    dragAxis = 0
+                },
+                onDragCancel = { dragAxis = 0 },
             ) { change, drag ->
-                val delta = (dragStartY - change.position.y) / size.height
-                dragStartY = change.position.y
-                when (dragMode) {
+                dragAccumX += drag.x
+                dragAccumY += drag.y
+                if (dragAxis == 0) {
+                    // 起手方向决定手势：横向拖=调进度，纵向拖=左半屏亮度 / 右半屏音量
+                    if (max(kotlin.math.abs(dragAccumX), kotlin.math.abs(dragAccumY)) <
+                        viewConfiguration.touchSlop * 2
+                    ) return@detectDragGestures
+                    dragAxis = if (kotlin.math.abs(dragAccumX) > kotlin.math.abs(dragAccumY)) 1 else 2
+                }
+                when (dragAxis) {
                     1 -> {
-                        val lp = activity?.window?.attributes
-                        if (lp != null) {
-                            lp.screenBrightness = (lp.screenBrightness + delta).coerceIn(0.01f, 1f)
-                            activity?.window?.attributes = lp
-                        }
+                        if (durationMs <= 0) return@detectDragGestures
+                        seekPreviewMs = (seekBaseMs + dragAccumX / size.width * durationMs)
+                            .toLong().coerceIn(0L, durationMs)
+                        hudKind = 3
                     }
                     2 -> {
-                        val max = audio?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
-                        val cur = audio?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
-                        val next = (cur + delta * max).toInt().coerceIn(0, max)
-                        audio?.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0)
+                        val step = (dragStartY - change.position.y) / size.height
+                        dragStartY = change.position.y
+                        if (dragStartX < size.width / 2) {
+                            val lp = activity?.window?.attributes ?: return@detectDragGestures
+                            val current = if (lp.screenBrightness >= 0f) lp.screenBrightness else 0.5f
+                            val next = (current + step).coerceIn(0.01f, 1f)
+                            lp.screenBrightness = next
+                            activity?.window?.attributes = lp
+                            hudKind = 1
+                            hudValue = next
+                        } else {
+                            val max = audio?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
+                            val cur = audio?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+                            val next = (cur + step * max).toInt().coerceIn(0, max)
+                            audio?.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0)
+                            hudKind = 2
+                            hudValue = if (max > 0) next.toFloat() / max else 0f
+                        }
                     }
                 }
             }
@@ -318,11 +386,55 @@ fun VideoPlayerScreen(
                 }
             }
 
+            // 手势反馈浮层：拖动时给出当前值，抬手 0.7 秒后消失
+            if (hudKind != 0 && !inPip) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .clip(RoundedCornerShape(Dimens.md))
+                        .background(Color.Black.copy(alpha = 0.66f))
+                        .padding(horizontal = Dimens.xl, vertical = Dimens.md),
+                ) {
+                    val (icon, label, ratio) = when (hudKind) {
+                        1 -> Triple(
+                            Icons.Outlined.BrightnessHigh,
+                            "亮度 ${(hudValue * 100).toInt()}%",
+                            hudValue,
+                        )
+                        2 -> Triple(
+                            Icons.Outlined.VolumeUp,
+                            "音量 ${(hudValue * 100).toInt()}%",
+                            hudValue,
+                        )
+                        else -> Triple(
+                            Icons.Filled.Forward10,
+                            "${fmt(seekPreviewMs)} / ${fmt(durationMs)}",
+                            if (durationMs > 0) seekPreviewMs.toFloat() / durationMs else 0f,
+                        )
+                    }
+                    Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White,
+                        modifier = Modifier.padding(top = Dimens.xs),
+                    )
+                    LinearProgressIndicator(
+                        progress = { ratio.coerceIn(0f, 1f) },
+                        modifier = Modifier.padding(top = Dimens.sm).width(112.dp),
+                        color = Color.White,
+                        trackColor = Color.White.copy(alpha = 0.28f),
+                    )
+                }
+            }
+
             // 顶部栏：外层 Scaffold 已避让状态栏，这里再加 systemBarsPadding 会把整行压到画面中间
             if (controlsVisible && !inPip) {
                 Row(
                     modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)))
+                        .then(if (fullscreen) Modifier.displayCutoutPadding() else Modifier)
                         .padding(start = Dimens.sm, end = Dimens.sm, top = Dimens.xs, bottom = Dimens.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -372,6 +484,7 @@ fun VideoPlayerScreen(
                 Column(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))))
+                        .then(if (fullscreen) Modifier.displayCutoutPadding() else Modifier)
                         .padding(horizontal = Dimens.sm, vertical = Dimens.xs),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -540,6 +653,13 @@ private fun ControlButton(
         Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(20.dp))
     }
 }
+
+/** 全屏时允许画面延伸到刘海/挖孔区，退出后回到默认 */
+private fun cutoutMode(extend: Boolean): Int =
+    if (extend && android.os.Build.VERSION.SDK_INT >= 27)
+        android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+    else
+        android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
 
 private fun fmt(ms: Long): String {
     val total = ms / 1000

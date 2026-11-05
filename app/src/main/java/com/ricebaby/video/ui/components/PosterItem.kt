@@ -17,6 +17,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,16 +54,24 @@ fun PosterItem(
             .clickable(onClick = onClick),
     ) {
         Box {
+            var loading by remember(imageUrl) { mutableStateOf(true) }
             AsyncImage(
                 model = imageUrl,
                 contentDescription = title,
                 contentScale = ContentScale.Crop,
+                onLoading = { loading = true },
+                onSuccess = { loading = false },
+                onError = { loading = false },
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(2f / 3f)
                     .clip(RoundedCornerShape(Dimens.posterCorner))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             )
+            // 加载期间用流光骨架顶住，避免整片亮灰块被当成「闪白」
+            if (loading && !imageUrl.isNullOrBlank()) {
+                Box(Modifier.matchParentSize().shimmer())
+            }
             bottomBadge?.takeIf { it.isNotBlank() }?.let {
                 Box(
                     Modifier

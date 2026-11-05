@@ -35,7 +35,9 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +70,7 @@ fun SearchPanel(
     val input = uiState.query
     val keyboard = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
+    var filtersExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.message) {
         uiState.message?.let { snackbarHostState.showSnackbar(it) }
@@ -189,8 +192,9 @@ fun SearchPanel(
             VGap(Dimens.md)
         }
 
-        if (uiState.sourceCounts.isNotEmpty()) {
+        if (uiState.sourceCounts.isNotEmpty() || uiState.typeCounts.isNotEmpty()) {
             FlowRow(
+                maxLines = if (filtersExpanded) Int.MAX_VALUE else 2,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
                 verticalArrangement = Arrangement.spacedBy(Dimens.sm),
                 modifier = Modifier.padding(horizontal = Dimens.screen),
@@ -210,6 +214,16 @@ fun SearchPanel(
                     FilterPill(text = "清除筛选", selected = false, onClick = viewModel::clearFilters)
                 }
             }
+            Text(
+                if (filtersExpanded) "收起" else "展开全部筛选",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.sm)
+                    .clip(RoundedCornerShape(Dimens.sm))
+                    .clickable { filtersExpanded = !filtersExpanded }
+                    .padding(horizontal = Dimens.sm, vertical = 2.dp),
+            )
             VGap(Dimens.md)
         }
 
@@ -240,7 +254,6 @@ fun SearchPanel(
                         navController.navigate("detail?vid=${android.net.Uri.encode(key)}")
                     },
                     onToggleFavorite = { viewModel.toggleFavorite(scored.item) },
-                    modifier = Modifier.animateItem(),
                 )
             }
         }

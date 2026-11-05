@@ -35,5 +35,9 @@ class RicebabyVideoApp : Application(), SingletonImageLoader.Factory {
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
             .components { add(OkHttpNetworkFetcherFactory(callFactory = { okHttpClient })) }
+            // 筛选/翻页会整批换海报，内存缓存放大些，回到看过的条目直接命中
+            .memoryCache {
+                coil3.memory.MemoryCache.Builder().maxSizePercent(context, 0.30).build()
+            }
             .build()
 }

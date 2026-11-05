@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -22,13 +23,22 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -40,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -119,6 +130,7 @@ private fun BrowseFeed(
     onPickTitle: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
+        var tagManagerOpen by rememberSaveable { mutableStateOf(false) }
         Text(
             "米宝影视",
             style = MaterialTheme.typography.headlineMedium,
@@ -139,33 +151,56 @@ private fun BrowseFeed(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.screen),
         )
 
-        if (uiState.tags.isNotEmpty()) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+        if (uiState.tags.isNotEmpty() || uiState.serverTags.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.Top,
                 modifier = Modifier.padding(horizontal = Dimens.screen, vertical = Dimens.lg),
             ) {
-                uiState.tags.forEach { tag ->
-                    val selected = tag == uiState.activeTag
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(Dimens.pillCorner))
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    uiState.tags.forEach { tag ->
+                        val selected = tag == uiState.activeTag
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(Dimens.pillCorner))
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                )
+                                .clickable { viewModel.setTag(tag) }
+                                .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
+                        ) {
+                            Text(
+                                tag,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            .clickable { viewModel.setTag(tag) }
-                            .padding(horizontal = Dimens.lg, vertical = Dimens.sm),
-                    ) {
-                        Text(
-                            tag,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        }
                     }
                 }
+                Text(
+                    "管理",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(start = Dimens.md)
+                        .clip(RoundedCornerShape(Dimens.sm))
+                        .clickable { tagManagerOpen = true }
+                        .padding(horizontal = Dimens.sm, vertical = Dimens.sm),
+                )
             }
+        }
+
+        if (tagManagerOpen) {
+            TagManagerSheet(
+                uiState = uiState,
+                onDismiss = { tagManagerOpen = false },
+                viewModel = viewModel,
+            )
         }
 
         LazyVerticalGrid(
@@ -183,12 +218,20 @@ private fun BrowseFeed(
             }
             if (uiState.items.isEmpty() && !uiState.loading && uiState.error != null) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    Text(
-                        uiState.error!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = Dimens.xxl),
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().padding(top = Dimens.xxl),
+                    ) {
+                        Text(
+                            uiState.error!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextButton(
+                            onClick = viewModel::retry,
+                            modifier = Modifier.padding(top = Dimens.sm),
+                        ) { Text("重试") }
+                    }
                 }
             }
             items(uiState.items, key = { it.id }) { item ->
@@ -205,8 +248,7 @@ private fun BrowseFeed(
 }
 
 @Composable
-private fun SearchEntry(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
+private fun SearchEntry(onClick: () -> Unit, modifier: Modifier = Modifier) {    Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(Dimens.lg))
@@ -226,5 +268,113 @@ private fun SearchEntry(onClick: () -> Unit, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** 标签管理：隐藏站点标签、增删自定义标签，按电影 / 剧集分别保存 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TagManagerSheet(
+    uiState: HomeUiState,
+    onDismiss: () -> Unit,
+    viewModel: HomeViewModel,
+) {
+    var draft by rememberSaveable { mutableStateOf("") }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimens.lg)
+                .padding(bottom = Dimens.xxl),
+        ) {
+            Text("标签管理", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "隐藏的标签不再出现在首页；自定义标签按同名标签向站点取内容。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = Dimens.xs, bottom = Dimens.lg),
+            )
+
+            Text("站点标签", style = MaterialTheme.typography.titleSmall)
+            if (uiState.serverTags.isEmpty()) {
+                Text(
+                    "站点没有返回标签",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Dimens.sm),
+                )
+            } else {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+                    modifier = Modifier.padding(top = Dimens.sm),
+                ) {
+                    uiState.serverTags.forEach { tag ->
+                        val hidden = tag in uiState.hiddenTags
+                        FilterChip(
+                            selected = !hidden,
+                            onClick = { viewModel.setTagHidden(tag, !hidden) },
+                            label = { Text(tag) },
+                        )
+                    }
+                }
+            }
+
+            Text("自定义标签", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = Dimens.lg))
+            if (uiState.customTags.isEmpty()) {
+                Text(
+                    "还没有添加",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = Dimens.sm),
+                )
+            } else {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+                    modifier = Modifier.padding(top = Dimens.sm),
+                ) {
+                    uiState.customTags.forEach { tag ->
+                        InputChip(
+                            selected = tag == uiState.activeTag,
+                            onClick = { viewModel.setTag(tag) },
+                            label = { Text(tag) },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Outlined.Close,
+                                    contentDescription = "删除 $tag",
+                                    modifier = Modifier.size(16.dp).clickable { viewModel.removeCustomTag(tag) },
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
+                modifier = Modifier.padding(top = Dimens.lg),
+            ) {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    label = { Text("标签名，如：悬疑") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                Button(
+                    onClick = { viewModel.addCustomTag(draft); draft = "" },
+                    enabled = draft.isNotBlank(),
+                ) { Text("添加") }
+            }
+
+            TextButton(onClick = viewModel::resetTags, modifier = Modifier.padding(top = Dimens.sm)) {
+                Text("恢复默认")
+            }
+        }
     }
 }

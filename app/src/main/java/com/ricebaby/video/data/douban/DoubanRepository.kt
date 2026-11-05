@@ -38,10 +38,11 @@ class DoubanRepository @Inject constructor(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun tags(baseUrl: String, type: String): List<String> =
-        get("$baseUrl/api/douban/tags?type=$type") { json.decodeFromString<TagsResponse>(it).tags } ?: emptyList()
+    /** 返回 null 表示请求失败（非 2xx 或异常），空列表才是「这个标签确实没有内容」 */
+    suspend fun tags(baseUrl: String, type: String): List<String>? =
+        get("$baseUrl/api/douban/tags?type=$type") { json.decodeFromString<TagsResponse>(it).tags }
 
-    suspend fun recommend(baseUrl: String, tag: String, type: String, pageStart: Int): List<DoubanItem> =
+    suspend fun recommend(baseUrl: String, tag: String, type: String, pageStart: Int): List<DoubanItem>? =
         get(
             "$baseUrl/api/douban/recommend?tag=${java.net.URLEncoder.encode(tag, "UTF-8")}&type=$type&page_limit=20&page_start=$pageStart",
         ) { raw ->
@@ -54,7 +55,7 @@ class DoubanRepository @Inject constructor(
                     playable = it.playable,
                 )
             }
-        } ?: emptyList()
+        }
 
     private suspend fun <T> get(url: String, parse: (String) -> T): T? = withContext(Dispatchers.IO) {
         runCatching {

@@ -141,6 +141,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M12 | 修复系统栏被重复避让导致的顶部大留白 | `feature/m12-inset-fix` |
 | M13 | 播放器控制层收紧（标题行贴顶、图标统一 20dp） | `feature/m13-player-controls` |
 | M14 | 签名 Release 发布 + 全新安装首轮回归修复 | `feature/m14-release-signing` |
+| M15 | 首页标签体验与竞态、搜索筛选折叠、全屏边到边与滑动手势 | `feature/m15-feed-gestures` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -219,3 +220,13 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **退出全屏必回竖屏（复发根因）**：`onDispose` 还原的是进入前的 `requestedOrientation`，即 `UNSPECIFIED`；关闭自动旋转时系统保持当前横屏不转回。改为显式还原 `SCREEN_ORIENTATION_PORTRAIT`，并在清单里把 Activity 默认方向锁成竖屏（浏览界面本就按竖屏设计，播放全屏是唯一例外）。实测：进全屏 `2424x1080` → 点「退出全屏」/按返回均回到 `1080x2424`
   - **搜索空态落到页面上**：无结果与未同步资源时原来只有一条一闪而过的 Snackbar，正文整块空白（用户视角＝坏了）。改为在结果网格内直接渲染 `EmptyState`（「没有找到相关影片」等资源侧文案）。实测：搜 `zzqqxx` 页面居中显示空态文案
   - 其余回归项通过：站点探测「可连接 · 无需密码」、资源同步 78 个、搜索流式结果与来源/类型筛选、详情页线路/选集、线路切换、小窗（PiP 过渡帧已确认渲染真实画面）、倍速、收藏
+- **2026-11-05 M15 完成**（tag `v0.15.0-M15`，41 单测绿）：用户手机实测反馈的四组问题
+  - **标签切换像卡顿**：根因是 `setTag` 只置 loading 不清 items，而骨架屏的条件是 `items.isEmpty() && loading` —— 旧数据一直挂着，界面什么都不显示直到新数据到达。改为切标签立即清空并出骨架；实测点「欧美」后立刻是 8 格流光骨架
+  - **电影/剧集来回切换很慢**：每次切换都重新请求 `api/douban/tags`（走代理一个来回 1-3 秒）。加 `tagsCache`（按 `base|type`，失败与空结果不落缓存），二次切换零等待；顺带修掉「上一个类型的当前标签在新类型里不存在仍照旧请求」的问题（现在回落到首个可用标签）
+  - **「暂无内容，稍后再试」误报**：`DoubanRepository` 把 HTTP 失败和空结果都返回空列表，且并发请求没有取消 —— 慢响应会覆盖新响应、翻页串标签。改为 `tags/recommend` 失败返回 null（新增两条单测锁住该契约），请求加代次号 + 取消，文案区分「加载失败，点击重试」与「这个标签下暂时没有内容」，空态旁给「重试」按钮
+  - **标签管理缺失**：新增 `FeedTagStore`（DataStore，按 movie/tv 分别存隐藏与自定义）与 `FeedTagRules.merge`（推荐位 + 站点标签 + 自定义，去掉隐藏，5 条单测）；标签行末尾加「管理」入口，BottomSheet 内 FilterChip 切换隐藏、InputChip 删除自定义、可恢复默认。实测隐藏「冷门佳片」后首页立即消失且重启仍生效；首轮实现时把 `setTagHidden(tag, hidden)` 的取反写反导致点了没反应，已由复现抓到并修正
+  - **搜索点来源闪白**：连续截图抓到证据 —— 结果网格里出现纯亮灰块。三重成因：条目挂 `animateItem()` 在筛选时整批淡入淡出、Coil 内存缓存偏小导致重新绑定、占位就是亮色 surfaceVariant。修法：结果网格去掉入场动画、内存缓存提到 30%、`PosterItem` 加载期覆盖既有 `shimmer()` 骨架（与整页骨架语言一致），筛选不再出现白块
+  - **筛选区太长**：来源/类型徽章默认折叠为两行，下方「展开全部筛选 / 收起」切换；实测折叠 6 枚、展开 16 枚
+  - **全屏摄像头一侧白边**：142px 亮带并非刘海，而是外层 Scaffold 的内衬背景（横屏时落在左侧），窗口背景与 decor 都盖不住。改为播放页上报全屏状态，AppRoot 在全屏时不给 NavHost 加内衬；同时补 `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES`、全屏期间窗口背景置黑、控制层加 `displayCutoutPadding()`。实测全屏左边缘逐行采样已全黑，退出全屏回竖屏正常
+  - **手势**：原来只有纵向亮度/音量且无任何反馈，横向调进度根本没实现。现按起手方向区分横竖（横=按屏宽比例 seek，抬手落位；纵=左半亮度 / 右半音量），统一 HUD（图标 + 数值 + 进度条，抬手 0.7 秒消失），离开播放页把 `screenBrightness` 还原为跟随系统。实测横滑 300px 进度 +24 秒、左半上滑 HUD「亮度 100%」、右半 HUD 跟手
+  - 已知限制补记：`Compose` 的 `padding()` 不接受负值，曾试图用负 padding 抵消内衬直接抛 `IllegalArgumentException: Padding must be non-negative` 崩溃，此类"抵消父级内衬"只能自上而下解决

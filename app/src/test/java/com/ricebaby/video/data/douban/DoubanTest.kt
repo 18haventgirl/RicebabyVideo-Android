@@ -44,7 +44,7 @@ class DoubanTest {
             ),
         )
         val base = server.url("/").toString().removeSuffix("/")
-        val items = repo().recommend(base, "热门", "movie", 0)
+        val items = requireNotNull(repo().recommend(base, "热门", "movie", 0))
         assertEquals(2, items.size)
         assertEquals("$base/api/douban/image?url=abc", items[0].cover)
         assertEquals("https://cdn/x.jpg", items[1].cover)
@@ -56,9 +56,18 @@ class DoubanTest {
     }
 
     @Test
-    fun `网络或解析异常返回空集合不抛出`() = runBlocking {
+    fun `请求失败返回 null 以便与空结果区分`() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(500))
-        assertEquals(emptyList<DoubanItem>(), repo().recommend(server.url("/").toString().removeSuffix("/"), "热门", "movie", 0))
+        assertNull(repo().recommend(server.url("/").toString().removeSuffix("/"), "热门", "movie", 0))
+    }
+
+    @Test
+    fun `成功但没有内容时返回空集合`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"subjects":[]}"""))
+        assertEquals(
+            emptyList<DoubanItem>(),
+            repo().recommend(server.url("/").toString().removeSuffix("/"), "热门", "movie", 0),
+        )
     }
 
     @Test

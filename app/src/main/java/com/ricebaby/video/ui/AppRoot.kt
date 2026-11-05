@@ -13,6 +13,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -41,6 +44,9 @@ val topTabs = listOf(
 fun AppRoot(navController: NavHostController = rememberNavController()) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    // 播放器全屏时要连 Scaffold 的内衬一起去掉，否则状态栏那一侧会露出浅色容器背景
+    var playerFullscreen by rememberSaveable { mutableStateOf(false) }
+    val immersive = playerFullscreen && currentRoute.orEmpty().startsWith("video")
     Scaffold(
         bottomBar = {
             // 播放器页需要真正全屏，不显示底部导航
@@ -70,7 +76,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
         NavHost(
             navController = navController,
             startDestination = "home",
-            modifier = Modifier.padding(innerPadding),
+            modifier = if (immersive) Modifier else Modifier.padding(innerPadding),
             enterTransition = {
                 androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) +
                     androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(280)) { it / 8 }
@@ -109,7 +115,7 @@ fun AppRoot(navController: NavHostController = rememberNavController()) {
                         type = androidx.navigation.NavType.StringType
                     },
                 ),
-            ) { com.ricebaby.video.player.VideoPlayerScreen(navController = navController) }
+            ) { com.ricebaby.video.player.VideoPlayerScreen(navController = navController, onFullscreenChange = { playerFullscreen = it }) }
         }
     }
 }
