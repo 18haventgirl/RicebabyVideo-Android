@@ -7,9 +7,7 @@ import com.ricebaby.video.BuildConfig
 import com.ricebaby.video.R
 import com.ricebaby.video.data.settings.SettingsRepository
 import com.ricebaby.video.data.settings.UnlockRepository
-import com.ricebaby.video.data.sources.SubscriptionSyncer
-import com.ricebaby.video.net.ProbeOutcome
-import com.ricebaby.video.net.SiteClient
+import com.ricebaby.video.data.sources.SourceBootstrap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -36,8 +34,7 @@ class UnlockViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val unlockRepository: UnlockRepository,
     private val settingsRepository: SettingsRepository,
-    private val siteClient: SiteClient,
-    private val subscriptionSyncer: SubscriptionSyncer,
+    private val sourceBootstrap: SourceBootstrap,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(UnlockUiState())
     val uiState: StateFlow<UnlockUiState> = _uiState.asStateFlow()
@@ -68,13 +65,13 @@ class UnlockViewModel @Inject constructor(
         _uiState.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             if (unlockRepository.submit(state.passphrase)) {
-                val seeded = settingsRepository.ensureDefaultInstance(
+                settingsRepository.ensureDefaultInstance(
                     name = context.getString(R.string.app_name),
                     baseUrlRaw = BuildConfig.DEFAULT_BASE_URL,
                 )
                 _uiState.update { it.copy(busy = false, unlocked = true) }
-                // 首次进入就把资源订阅同步好，否则搜片和播放都要先去设置页点一次
-                if (seeded) syncSources(BuildConfig.DEFAULT_BASE_URL)
+                // 资源订阅当场补齐，否则搜片和播放都要先去设置页点一次
+                sourceBootstrap.ensureReady()
             } else {
                 _uiState.update {
                     it.copy(
@@ -102,16 +99,8 @@ class UnlockViewModel @Inject constructor(
             } else {
                 unlockRepository.grant()
                 _uiState.update { it.copy(busy = false, unlocked = true) }
-                val baseUrl = settingsRepository.state.first().instances
-                    .firstOrNull { it.id == id }?.baseUrl
-                if (baseUrl != null) syncSources(baseUrl)
+                sourceBootstrap.ensureReady()
             }
         }
-    }
-
-    /** 同步失败不打扰用户：设置页的「同步资源」始终可以手动重来。 */
-    private suspend fun syncSources(baseUrl: String) {
-        val sources = (siteClient.probe(baseUrl) as? ProbeOutcome.Reachable)?.subscriptionSources.orEmpty()
-        if (sources.isNotBlank()) subscriptionSyncer.sync(sources)
     }
 }

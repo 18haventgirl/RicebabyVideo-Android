@@ -7,7 +7,10 @@ import com.ricebaby.video.data.db.FavoriteEntity
 import com.ricebaby.video.data.db.SearchHistoryDao
 import com.ricebaby.video.data.db.SearchHistoryEntity
 import com.ricebaby.video.data.db.SourceDao
+import com.ricebaby.video.data.db.VideoSourceEntity
 import com.ricebaby.video.data.settings.SettingsRepository
+import com.ricebaby.video.data.sources.BootstrapState
+import com.ricebaby.video.data.sources.SourceBootstrap
 import com.ricebaby.video.net.SiteClient
 import com.ricebaby.video.search.SearchEvent
 import com.ricebaby.video.search.SearchHandle
@@ -28,7 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-enum class SearchPhase { Idle, Streaming, Done, Failed }
+enum class SearchPhase { Idle, Preparing, Streaming, Done, Failed }
 
 data class SourceBadge(val displayName: String, val sourceId: String, val count: Int)
 
@@ -53,6 +56,7 @@ class SearchViewModel @Inject constructor(
     savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val settingsRepository: SettingsRepository,
     private val sourceDao: SourceDao,
+    private val sourceBootstrap: SourceBootstrap,
     private val favoriteDao: FavoriteDao,
     private val searchHistoryDao: SearchHistoryDao,
     private val streamClient: SearchStreamClient,
@@ -127,20 +131,37 @@ class SearchViewModel @Inject constructor(
         if (query.isEmpty()) return
         handle?.cancel()
         viewModelScope.launch {
-            transient.value = Transient(query = query, phase = SearchPhase.Streaming)
+            transient.value = Transient(query = query, phase = SearchPhase.Preparing)
             searchHistoryDao.upsert(SearchHistoryEntity(query, System.currentTimeMillis()))
             val instance = settingsRepository.state.first().activeInstance
             if (instance == null) {
                 transient.value = transient.value.copy(phase = SearchPhase.Failed, message = "先在设置里添加并选择观影站点")
                 return@launch
             }
-            val sources = sourceDao.enabledOnce()
-            if (sources.isEmpty()) {
-                transient.value = transient.value.copy(phase = SearchPhase.Failed, message = "还没有可搜索的资源，请在设置页同步资源订阅")
-                return@launch
-            }
+            val sources = prepareSources()
+            if (sources.isEmpty()) return@launch
             handle = streamClient.start(instance.baseUrl, query, sources) { event -> onSearchEvent(event, query) }
         }
+    }
+
+    /**
+     * 资源为空时不再把用户支使去设置页：当场同步一次，成功就继续搜。
+     * 返回空列表表示已经把失败文案写进状态了。
+     */
+    private suspend fun prepareSources(): List<VideoSourceEntity> {
+        val existing = sourceDao.enabledOnce()
+        if (existing.isNotEmpty()) return existing
+        val boot = sourceBootstrap.ensureReady()
+        if (boot.state == BootstrapState.Ready) return sourceDao.enabledOnce()
+        transient.value = transient.value.copy(
+            phase = SearchPhase.Failed,
+            message = when (boot.state) {
+                BootstrapState.NoSubscription -> "这个站点没有配置资源订阅"
+                BootstrapState.Unreachable -> boot.detail ?: "站点连不上，请检查网络后重试"
+                else -> "资源还没准备好，请检查网络后重试"
+            },
+        )
+        return emptyList()
     }
 
     private fun onSearchEvent(event: SearchEvent, query: String) {

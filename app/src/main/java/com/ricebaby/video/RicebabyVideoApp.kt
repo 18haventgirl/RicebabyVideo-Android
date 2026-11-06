@@ -5,15 +5,28 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
-import com.ricebaby.video.data.settings.SettingsRepository
+import com.ricebaby.video.data.sources.SourceBootstrap
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
 @HiltAndroidApp
 class RicebabyVideoApp : Application(), SingletonImageLoader.Factory {
     @Inject lateinit var okHttpClient: OkHttpClient
-    @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject lateinit var sourceBootstrap: SourceBootstrap
+
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() {
+        super.onCreate()
+        // 上一次没同步成功的老用户，冷启动再兜一次，不用去设置页手动点
+        appScope.launch { sourceBootstrap.ensureReady() }
+    }
+
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
             .components { add(OkHttpNetworkFetcherFactory(callFactory = { okHttpClient })) }

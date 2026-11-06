@@ -59,6 +59,9 @@ import com.ricebaby.video.ui.theme.Dimens
 
 /** 首页展开的搜索面板：输入、历史、来源/类型筛选与流式结果 */
 @OptIn(ExperimentalLayoutApi::class)
+/** 准备与检索期间都算「在忙」，别在这一段露出空态 */
+private val busyPhases = setOf(SearchPhase.Preparing, SearchPhase.Streaming)
+
 @Composable
 fun SearchPanel(
     navController: NavHostController,
@@ -158,7 +161,7 @@ fun SearchPanel(
             }
         }
 
-        if (uiState.phase == SearchPhase.Streaming) {
+        if (uiState.phase == SearchPhase.Streaming || uiState.phase == SearchPhase.Preparing) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
@@ -166,9 +169,12 @@ fun SearchPanel(
             ) {
                 CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
                 Text(
-                    uiState.progress?.let {
-                        "已检索 ${it.first}/${it.second} 个资源 · 找到 ${uiState.results.size} 个结果"
-                    } ?: "正在检索…",
+                    when {
+                        uiState.phase == SearchPhase.Preparing -> "正在准备资源…"
+                        uiState.progress != null ->
+                            "已检索 ${uiState.progress!!.first}/${uiState.progress!!.second} 个资源 · 找到 ${uiState.results.size} 个结果"
+                        else -> "正在检索…"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -227,13 +233,13 @@ fun SearchPanel(
             contentPadding = PaddingValues(start = Dimens.screen, end = Dimens.screen, bottom = Dimens.scrollEnd),
             modifier = Modifier.fillMaxSize(),
         ) {
-            if (uiState.results.isEmpty() && uiState.phase == SearchPhase.Streaming) {
+            if (uiState.results.isEmpty() && uiState.phase in busyPhases) {
                 items((1..6).toList(), key = { "sk-$it" }) {
                     PosterSkeleton(modifier = Modifier.animateItem())
                 }
             }
             // 空态与错误态要留在页面上，不能只靠一闪而过的提示条
-            if (uiState.results.isEmpty() && uiState.phase != SearchPhase.Streaming && uiState.query.isNotBlank()) {
+            if (uiState.results.isEmpty() && uiState.phase !in busyPhases && uiState.query.isNotBlank()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     EmptyState(uiState.message ?: "没有找到相关影片")
                 }

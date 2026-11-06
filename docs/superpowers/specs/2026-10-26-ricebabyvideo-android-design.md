@@ -149,6 +149,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M18 | 移除应用内网络代理设置 | `feature/m18-drop-inapp-proxy` |
 | M19 | 站点地址内置 + 口令门槛 | `feature/m19-builtin-site-unlock` |
 | M20 | 更换应用图标为海浪播放标 | `feature/m20-new-icon` |
+| M21 | 图标按视觉重心居中 + 资源订阅自动就绪 | `feature/m21-icon-center-auto-sync` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -278,3 +279,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 同步换色：`ic_launcher_background` 与口令页/启动位的品牌底 `BrandNavy` → `BrandIconBg = #FEEED6`；米色贴在暖白页面上几乎没对比，品牌位补一条 `outlineVariant@0.6` 发丝描边把它托出来
   - 单色层（Material You 主题图标）仍是播放三角，未随新图重画 —— 海浪 C 与三角在单色下会糊成一团，保留三角更干净
   - 实测：Pixel_9 应用抽屉里图标为米色圆盘 + 完整海浪播放标，无切边、无白角（外围那圈金色是启动器按图标主色生成的投影气泡，旧 navy 图标同样带一圈浅蓝，非本项目绘制）；口令页品牌位与新图标一致
+- **2026-11-06 M21 完成**（tag `v0.21.0-M21`，46 单测绿）：用户复核图标后提的两条
+  - **图标仍偏上**：M20 按包围盒居中（偏移仅 0.13dp），但海浪 C 的右侧是细浪尾，重量压在左上，肉眼就是「靠上」——实测视觉重心比画布中心偏左上 4.0dp / 3.1dp。改为按 **alpha 加权重心**对齐：重心即对齐点，外接圆仍夹在 66dp 安全区内。装机复测：重心相对圆盘中心只偏 0.4px（圆盘直径的 0.2%），四边余量 左 35 / 右 19 / 上 26 / 下 27 px，无切边
+  - **口令登录后还要手动同步资源，不合理**：M19 的自动同步只在「新建内置站点那一次」跑，网络一抖就永久落空，之后搜索只会提示「请在设置页同步资源订阅」。抽出 `data/sources/SourceBootstrap`（Mutex 去重 + probe + sync），三个触发点兜底：冷启动（`RicebabyVideoApp.onCreate`）、解锁后（口令与自建站两条路都走）、搜索前（`SearchViewModel.prepareSources`，资源为空当场补一次再继续）。搜索新增 `SearchPhase.Preparing`，界面显示「正在准备资源…」而不是把用户支使去设置页；设置页「同步资源」改为复用同一实现（force），文案不变
+  - 实测：① 全新安装 → 输口令 → 直接点首页海报，出现「正在准备资源…」随后出结果，全程没进过设置页；② 解锁时把代理指向死端口让同步失败 → 恢复网络 → 点海报仍然自动补好并出结果（这就是用户遇到的场景）；③ 设置页手动「同步资源」回显「已同步 78 个资源」

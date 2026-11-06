@@ -10,7 +10,8 @@ import com.ricebaby.video.data.backup.BackupRepository
 import com.ricebaby.video.data.db.SourceDao
 import com.ricebaby.video.data.settings.AppSettings
 import com.ricebaby.video.data.settings.SettingsRepository
-import com.ricebaby.video.data.sources.SubscriptionSyncer
+import com.ricebaby.video.data.sources.BootstrapState
+import com.ricebaby.video.data.sources.SourceBootstrap
 import com.ricebaby.video.net.LoginOutcome
 import com.ricebaby.video.net.ProbeOutcome
 import com.ricebaby.video.net.SiteClient
@@ -40,7 +41,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val siteClient: SiteClient,
-    private val syncer: SubscriptionSyncer,
+    private val sourceBootstrap: SourceBootstrap,
     sourceDao: SourceDao,
     @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: Context,
     private val backupRepository: BackupRepository,
@@ -69,27 +70,18 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun syncSources() = viewModelScope.launch {
-        val instance = settingsRepository.state.first().activeInstance
-        if (instance == null) {
-            transient.value = transient.value.copy(syncMessage = "请先添加并选择观影站点")
-            return@launch
-        }
         transient.value = transient.value.copy(syncMessage = "正在同步…")
-        when (val probe = siteClient.probe(instance.baseUrl)) {
-            is ProbeOutcome.Unreachable ->
-                transient.value = transient.value.copy(syncMessage = probe.reason)
-            is ProbeOutcome.Reachable -> {
-                if (probe.subscriptionSources.isBlank()) {
-                    transient.value = transient.value.copy(syncMessage = "该站点未配置资源订阅")
-                } else {
-                    val outcome = syncer.sync(probe.subscriptionSources)
-                    val suffix = if (outcome.errors.isNotEmpty()) "，${outcome.errors.size} 个订阅失败" else ""
-                    transient.value = transient.value.copy(
-                        syncMessage = "已同步 ${outcome.accepted} 个资源$suffix",
-                    )
-                }
-            }
-        }
+        val result = sourceBootstrap.ensureReady(force = true)
+        val suffix = if (result.errors > 0) "，${result.errors} 个订阅失败" else ""
+        transient.value = transient.value.copy(
+            syncMessage = when (result.state) {
+                BootstrapState.Ready -> "已同步 ${result.accepted} 个资源$suffix"
+                BootstrapState.NoSite -> "请先添加并选择观影站点"
+                BootstrapState.NoSubscription -> "该站点未配置资源订阅"
+                BootstrapState.Unreachable -> result.detail ?: "无法连接站点"
+                BootstrapState.NothingImported -> result.detail ?: "没有取到可用资源"
+            },
+        )
     }
 
     fun testConnection(id: String) = viewModelScope.launch {
