@@ -28,3 +28,6 @@ val DarkSurface = Color(0xFF141715)
 val DarkSurfaceVariant = Color(0xFF2C2F2D)
 val DarkOnSurface = Color(0xFFE1E3DF)
 val DarkOnSurfaceVariant = Color(0xFFC0C4C0)
+
+// 应用图标底色，与 ic_launcher_background 保持一致；启动位与口令页共用
+val BrandNavy = Color(0xFF041C3D)

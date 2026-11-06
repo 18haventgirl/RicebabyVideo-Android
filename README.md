@@ -17,19 +17,22 @@
 - 支持一键导出与恢复备份
 
 **站点**
-- 多站点实例切换，支持站点访问密码
+- 站点地址已内置，首次打开只需输入口令
+- 多站点实例切换，支持站点访问密码，也可改用自己的站点
 
 ## 界面预览
 
 截图取自 Pixel_9（Android 16）实机运行，浅色主题。
 
-| 首页 | 搜索 |
+| 口令 | 首页 |
 | :---: | :---: |
-| <img src="docs/screenshots/01-home.jpg" alt="首页：搜索栏、电影剧集切换与海报推荐流" width="230"> | <img src="docs/screenshots/02-search.jpg" alt="搜索：来源与类型筛选、结果网格" width="230"> |
-| 详情 | 播放 |
-| <img src="docs/screenshots/03-detail.jpg" alt="详情：影片信息与线路选集" width="230"> | <img src="docs/screenshots/04-player.jpg" alt="播放：竖屏内嵌播放器" width="230"> |
-| 待看 | 设置 |
-| <img src="docs/screenshots/05-watchlist.jpg" alt="待看：收藏与观看记录" width="230"> | <img src="docs/screenshots/06-settings.jpg" alt="设置：站点、资源与备份" width="230"> |
+| <img src="docs/screenshots/00-unlock.jpg" alt="首次打开：输入口令进入" width="230"> | <img src="docs/screenshots/01-home.jpg" alt="首页：搜索栏、电影剧集切换与海报推荐流" width="230"> |
+| 搜索 | 详情 |
+| <img src="docs/screenshots/02-search.jpg" alt="搜索：来源与类型筛选、结果网格" width="230"> | <img src="docs/screenshots/03-detail.jpg" alt="详情：影片信息与线路选集" width="230"> |
+| 播放 | 待看 |
+| <img src="docs/screenshots/04-player.jpg" alt="播放：竖屏内嵌播放器" width="230"> | <img src="docs/screenshots/05-watchlist.jpg" alt="待看：收藏与观看记录" width="230"> |
+| 设置 | |
+| <img src="docs/screenshots/06-settings.jpg" alt="设置：站点、资源与备份" width="230"> | |
 
 <img src="docs/screenshots/07-fullscreen.jpg" alt="全屏播放" width="620">
 
@@ -37,7 +40,7 @@
 
 到 [Releases](../../releases) 下载最新的 APK，安装即可。签名固定，后续版本可直接覆盖升级。
 
-首次使用：设置 → 添加观影站点 → 同步资源，之后回到首页搜索或浏览推荐。
+首次使用：打开 App 输入口令即可，站点地址与资源订阅已随安装包内置。
 
 ## 开发
 

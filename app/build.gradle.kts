@@ -15,6 +15,10 @@ val signingProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// 内置入口口令的 SHA-256（小写十六进制），只存摘要不存原文。
+// 换口令：先算 `printf '%s' '新口令' | sha256sum`，把结果填到这里重新打包。
+val unlockDigest = "c7f0c543779e344b0da5c4ffb5850ca1abc1baf49a1abf7a4e79348ed82b99c0"
+
 android {
     namespace = "com.ricebaby.video"
     compileSdk = 37
@@ -23,9 +27,13 @@ android {
         applicationId = "com.ricebaby.video"
         minSdk = 26
         targetSdk = 37
-        versionCode = 21
-        versionName = "0.18.0-M18"
+        versionCode = 22
+        versionName = "0.19.0-M19"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 站点地址内置在安装包里，新用户不必再手输；口令只存摘要，原文不进仓库。
+        buildConfigField("String", "DEFAULT_BASE_URL", "\"https://ricebaby-video.pages.dev\"")
+        buildConfigField("String", "UNLOCK_SHA256", "\"$unlockDigest\"")
     }
 
     signingConfigs {
@@ -55,6 +63,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

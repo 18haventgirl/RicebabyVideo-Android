@@ -54,6 +54,21 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    /** 内置站点：解锁时若还没有任何实例，就把打包进来的地址写成默认站点。 */
+    suspend fun ensureDefaultInstance(name: String, baseUrlRaw: String): Boolean {
+        val normalized = SiteInstanceCodec.normalizeBaseUrl(baseUrlRaw) ?: return false
+        var seeded = false
+        context.settingsDataStore.edit { prefs ->
+            val current = SiteInstanceCodec.decodeInstances(prefs[KEY_INSTANCES].orEmpty())
+            if (current.isNotEmpty()) return@edit
+            val instance = SiteInstance(SiteInstanceCodec.newId(), name, normalized)
+            prefs[KEY_INSTANCES] = SiteInstanceCodec.encodeInstances(listOf(instance))
+            prefs[KEY_ACTIVE] = instance.id
+            seeded = true
+        }
+        return seeded
+    }
+
     suspend fun restoreInstances(instances: List<SiteInstance>, activeId: String?) {
         context.settingsDataStore.edit { prefs ->
             prefs[KEY_INSTANCES] = SiteInstanceCodec.encodeInstances(instances)

@@ -17,8 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,6 +29,9 @@ import androidx.navigation.compose.rememberNavController
 import com.ricebaby.video.ui.detail.DetailScreen
 import com.ricebaby.video.ui.home.HomeScreen
 import com.ricebaby.video.ui.settings.SettingsScreen
+import com.ricebaby.video.ui.unlock.BrandSplash
+import com.ricebaby.video.ui.unlock.UnlockScreen
+import com.ricebaby.video.ui.unlock.UnlockViewModel
 import com.ricebaby.video.ui.watchlist.WatchlistScreen
 
 data class TopTab(val route: String, val label: String, val icon: ImageVector)
@@ -42,6 +47,17 @@ val topTabs = listOf(
 
 @Composable
 fun AppRoot(navController: NavHostController = rememberNavController()) {
+    val unlockViewModel: UnlockViewModel = hiltViewModel()
+    val unlockState by unlockViewModel.uiState.collectAsStateWithLifecycle()
+    when {
+        !unlockState.resolved -> BrandSplash()
+        !unlockState.unlocked -> UnlockScreen(unlockViewModel)
+        else -> AppShell(navController)
+    }
+}
+
+@Composable
+private fun AppShell(navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     // 播放器全屏时要连 Scaffold 的内衬一起去掉，否则状态栏那一侧会露出浅色容器背景

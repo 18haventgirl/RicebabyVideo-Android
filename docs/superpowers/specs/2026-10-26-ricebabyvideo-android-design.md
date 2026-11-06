@@ -147,6 +147,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M16b | 线路默认折叠、间距收紧、管理按钮对齐 | `feature/m16b-line-collapse` |
 | M17 | 更名「海里影视」、自绘进度条、图标与安全区适配 | `feature/m17-brand-seekbar` |
 | M18 | 移除应用内网络代理设置 | `feature/m18-drop-inapp-proxy` |
+| M19 | 站点地址内置 + 口令门槛 | `feature/m19-builtin-site-unlock` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -261,3 +262,11 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 保留：站点侧 `/api/proxy` 取流（`StreamUrls.proxyStreamUrl`）与「站点访问密码」—— 与被删功能无关
   - 兼容：旧备份 JSON 里残留的 proxy 字段靠 `ignoreUnknownKeys` 吸收；旧 DataStore 里的键不再读取，无需迁移
   - 验证：测试机原本靠应用内代理访问站点，改走系统级代理（`settings put global http_proxy 127.0.0.1:7890` + `adb reverse`）后首页标签流、搜索、设置页均正常；设置页只剩观影站点 / 数据备份 / 站点列表三块，截图重拍
+- **2026-11-06 M19 完成**（tag `v0.19.0-M19`，46 单测绿）：站点地址内置，新用户由「输入网站」改为「输入口令」
+  - 前置调研：站点没有服务端鉴权可依赖（`/api/auth/register|login|session|request-code|verify` 全部 404），因此门槛只能做在 App 侧 —— 口令原文不进仓库，`app/build.gradle.kts` 里只留 SHA-256 摘要，`AppUnlock.matches` 用 `MessageDigest.isEqual` 比对；已明确告知用户：拆包即可拿到地址与摘要，这是便利门槛而非安全边界
+  - 内置地址：`buildFeatures.buildConfig = true` + `DEFAULT_BASE_URL`；`SettingsRepository.ensureDefaultInstance` 只在实例列表为空时写入并激活，返回是否新建，老用户升级不会被塞进第二个站点
+  - 解锁状态：`UnlockRepository`（独立 DataStore `ricebaby_unlock`）只记一个布尔值，口令过一次就不再问；`AppRoot` 拆成门槛 + `AppShell`，状态未就绪时先站住品牌位（`BrandSplash`），避免闪一下口令页
+  - 首启补齐资源订阅：解锁当次顺带 `probe + sync` 一次（原来新用户点首页海报会走到「还没有可搜索的资源，请在设置页同步资源订阅」，与"输入口令就能用"矛盾）；仅在真正新建站点时同步，失败不打扰，设置页仍可手动同步
+  - 保留进阶入口：口令页底部「使用自己的站点地址」写入自定义实例并放行；设置页站点列表原样保留，多实例、密码、测试、备份都不动
+  - 实测（Pixel_9）：全新安装 → 口令页无任何地址输入 → 错口令出红框与「口令不正确，请再试一次」（输入框抖动 + 清空）→ 正确口令进首页，标签流与海报正常，设置页出现「海里影视 / https://ricebaby-video.pages.dev」且资源自动同步到 78 个 → 杀进程重启不再问口令 → 删除解锁状态文件模拟老用户升级，口令页出现但实例仍只有 1 个，不产生重复站点
+  - 过程修正：自带站点对话框原本在点击保存后同步读 `selfHostedError` 判空关窗，协程还没跑必然为空，非法地址被静默吞掉；改为由 `unlocked` 驱动关窗，错误留在对话框里
