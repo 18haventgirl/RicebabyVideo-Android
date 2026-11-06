@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +57,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ricebaby.video.R
-import com.ricebaby.video.ui.theme.BrandNavy
+import com.ricebaby.video.ui.theme.BrandIconBg
 import com.ricebaby.video.ui.theme.Dimens
 
 /** 首次进入只问口令；站点地址已随安装包内置。 */
@@ -249,13 +250,16 @@ fun BrandSplash() {
 
 @Composable
 private fun BrandMark(size: Dp, corner: Dp, alpha: Float = 1f) {
+    val shape = RoundedCornerShape(corner)
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(size)
             .alpha(alpha)
-            .clip(RoundedCornerShape(corner))
-            .background(BrandNavy),
+            .clip(shape)
+            .background(BrandIconBg)
+            // 米色图标底在暖白页面上几乎没有对比，补一条发丝描边把它托出来
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), shape),
     ) {
         Image(
             painter = painterResource(id = R.mipmap.ic_launcher_foreground),
