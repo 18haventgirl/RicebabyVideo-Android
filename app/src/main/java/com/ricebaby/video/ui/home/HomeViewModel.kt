@@ -115,7 +115,13 @@ class HomeViewModel @Inject constructor(
             internal.value = internal.value.copy(loading = false, error = "站点还没准备好，请稍后重试")
             return
         }
-        val serverTags = loadTags(base, if (internal.value.isTv) "tv" else "movie")
+        val type = if (internal.value.isTv) "tv" else "movie"
+        // 先用上次成功的标签把位置钉住，网络回来再静默刷新
+        val cached = tagStore.serverTags("$base|$type").first()
+        if (cached.isNotEmpty() && internal.value.serverTags != cached) {
+            internal.value = internal.value.copy(serverTags = cached)
+        }
+        val serverTags = loadTags(base, type)
         internal.value = internal.value.copy(serverTags = serverTags.orEmpty())
         val visible = currentVisibleTags()
         if (visible.isEmpty()) {
@@ -152,6 +158,28 @@ class HomeViewModel @Inject constructor(
                 internal.value = internal.value.copy(activeTag = keep ?: visible.first())
                 startFetch(replace = true)
             }
+        }
+    }
+
+    /** 下拉刷新：标签重新拉一次（缓存也作废），内容按当前标签重新出第一页 */
+    fun refresh() {
+        val base = baseUrl ?: return
+        val type = if (internal.value.isTv) "tv" else "movie"
+        cancelFetch()
+        tagsCache.remove("$base|$type")
+        viewModelScope.launch {
+            val serverTags = loadTags(base, type)
+            if (!serverTags.isNullOrEmpty()) internal.value = internal.value.copy(serverTags = serverTags)
+            val visible = currentVisibleTags()
+            val active = if (internal.value.activeTag in visible) internal.value.activeTag else visible.firstOrNull().orEmpty()
+            internal.value = internal.value.copy(
+                items = emptyList(),
+                activeTag = active,
+                pageStart = 0,
+                loading = true,
+                error = null,
+            )
+            if (active.isNotEmpty()) startFetch(replace = true)
         }
     }
 
@@ -236,10 +264,14 @@ class HomeViewModel @Inject constructor(
         if (serverTags == null) "站点标签加载失败，点击重试" else "站点没有返回标签"
 
     private suspend fun loadTags(base: String, type: String): List<String>? {
-        tagsCache["$base|$type"]?.let { return it }
+        val scope = "$base|$type"
+        tagsCache[scope]?.let { return it }
         val fetched = douban.tags(base, type)
         // 失败与空结果都不落缓存，下次进来仍会重试
-        if (!fetched.isNullOrEmpty()) tagsCache["$base|$type"] = fetched
+        if (!fetched.isNullOrEmpty()) {
+            tagsCache[scope] = fetched
+            tagStore.saveServerTags(scope, fetched)
+        }
         return fetched?.takeIf { it.isNotEmpty() }
     }
 

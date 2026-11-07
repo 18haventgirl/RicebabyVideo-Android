@@ -56,7 +56,9 @@ class DetailViewModel @Inject constructor(
                 poster = p.target.pic,
                 lines = p.candidates.map { LineEntry(it.source, it.sourceDisplayName ?: it.source) },
             )
-            loadLine(0)
+            // 从哪条线路点进来就先选哪条，别默认跳到第一个源
+            val from = p.candidates.indexOfFirst { it.source == p.target.source }
+            loadLine(if (from >= 0) from else 0)
         }
     }
 

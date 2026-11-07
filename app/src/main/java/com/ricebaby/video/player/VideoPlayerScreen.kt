@@ -100,7 +100,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.ricebaby.video.ui.components.EpisodeChipRow
-import com.ricebaby.video.ui.components.LineChipRow
 import com.ricebaby.video.ui.theme.Dimens
 
 private val SPEEDS = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
@@ -707,7 +706,7 @@ fun VideoPlayerScreen(
             }
         }
 
-        // 竖屏信息区：与详情页同款的线路 / 选集呈现，换行完整展示且可纵向滚动
+        // 竖屏信息区：播放中不给用户切线路的机会（失败时自动顺延），只给详情与选集
         if (!fullscreen && !inPip) {
             Column(
                 modifier = Modifier
@@ -718,18 +717,58 @@ fun VideoPlayerScreen(
                     .padding(top = Dimens.md, bottom = Dimens.xl),
                 verticalArrangement = Arrangement.spacedBy(Dimens.md),
             ) {
-                if (state.lines.size > 1) {
+                val meta = listOf(state.year, state.area, state.typeName).filter { it.isNotBlank() }.joinToString(" · ")
+                if (meta.isNotBlank() || state.director.isNotBlank() || state.blurb.isNotBlank()) {
                     Text(
-                        "线路",
+                        "影片详情",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(horizontal = Dimens.screen),
                     )
-                    LineChipRow(
-                        lines = state.lines.map { it.name },
-                        selected = state.activeLine,
-                        onSelect = { viewModel.switchLine(it) },
+                    Column(
                         modifier = Modifier.padding(horizontal = Dimens.screen),
-                    )
+                        verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+                    ) {
+                        if (meta.isNotBlank()) {
+                            Text(meta, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (state.director.isNotBlank()) {
+                            Text(
+                                "导演：${state.director}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (state.actor.isNotBlank()) {
+                            Text(
+                                "主演：${state.actor}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (state.blurb.isNotBlank()) {
+                            var blurbExpanded by remember { mutableStateOf(false) }
+                            Text(
+                                state.blurb,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = if (blurbExpanded) Int.MAX_VALUE else 3,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            if (state.blurb.length > 90) {
+                                Text(
+                                    if (blurbExpanded) "收起" else "展开全部",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(Dimens.sm))
+                                        .clickable { blurbExpanded = !blurbExpanded }
+                                        .padding(horizontal = Dimens.sm, vertical = 2.dp),
+                                )
+                            }
+                        }
+                    }
                 }
                 if (state.episodes.isNotEmpty()) {
                     Text(

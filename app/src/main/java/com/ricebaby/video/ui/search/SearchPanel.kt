@@ -196,17 +196,25 @@ fun SearchPanel(
                 maxLines = if (filtersExpanded) Int.MAX_VALUE else 2,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
                 verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+                itemVerticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
-                uiState.sourceCounts.take(8).forEach { badge ->
-                    FilterPill(
-                        text = "${badge.displayName} ${badge.count}",
-                        selected = badge.sourceId in uiState.selectedSources,
-                    ) { viewModel.toggleSourceFilter(badge.sourceId) }
+                // 不截断：与详情页「线路」同一批采集站，两处数量必须一致
+                if (uiState.sourceCounts.isNotEmpty()) {
+                    FilterCaption("线路")
+                    uiState.sourceCounts.forEach { badge ->
+                        FilterPill(
+                            text = "${badge.displayName} ${badge.count}",
+                            selected = badge.sourceId in uiState.selectedSources,
+                        ) { viewModel.toggleSourceFilter(badge.sourceId) }
+                    }
                 }
-                uiState.typeCounts.take(8).forEach { (name, count) ->
-                    FilterPill(text = "$name $count", selected = name in uiState.selectedTypes) {
-                        viewModel.toggleTypeFilter(name)
+                if (uiState.typeCounts.isNotEmpty()) {
+                    FilterCaption("类型")
+                    uiState.typeCounts.forEach { (name, count) ->
+                        FilterPill(text = "$name $count", selected = name in uiState.selectedTypes) {
+                            viewModel.toggleTypeFilter(name)
+                        }
                     }
                 }
                 if (uiState.selectedSources.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) {
@@ -288,4 +296,15 @@ fun SectionLabel(text: String, action: Pair<String, () -> Unit>? = null) {
 @Composable
 fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
     SelectChip(label = text, selected = selected, onClick = onClick)
+}
+
+/** 筛选行内的分组小标题，与胶囊同高，避免另起一行占空间 */
+@Composable
+private fun FilterCaption(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(end = Dimens.xs),
+    )
 }

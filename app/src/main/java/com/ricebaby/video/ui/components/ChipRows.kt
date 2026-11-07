@@ -33,6 +33,9 @@ import com.ricebaby.video.ui.theme.Dimens
 /** M3 胶囊的固定高度，用来估算折叠后实际占了几行 */
 private val ChipHeight = 32.dp
 
+/** 行间距比列间距更紧：4dp 时两行胶囊看起来像断开了 */
+private val ChipVerticalGap = 2.dp
+
 /**
  * 线路选择：详情页与播放页共用。默认只展示两行，超出部分由用户主动展开，
  * 因为采集站动辄十几条线路，全部铺开会把选集挤出首屏。
@@ -47,14 +50,14 @@ fun LineChipRow(
 ) {
     var expanded by rememberSaveable(lines.size) { mutableStateOf(false) }
     var visibleRows by rememberSaveable(lines.size) { mutableIntStateOf(1) }
-    val gapPx = with(LocalDensity.current) { Dimens.xs.roundToPx() }
+    val gapPx = with(LocalDensity.current) { ChipVerticalGap.roundToPx() }
     val chipPx = with(LocalDensity.current) { ChipHeight.roundToPx() }
 
     Column(modifier = modifier) {
         FlowRow(
             maxLines = if (expanded) Int.MAX_VALUE else 2,
             horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
-            verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+            verticalArrangement = Arrangement.spacedBy(ChipVerticalGap),
             modifier = Modifier.onSizeChanged {
                 visibleRows = ((it.height + gapPx) / (chipPx + gapPx)).coerceAtLeast(1)
             },
@@ -89,7 +92,7 @@ fun EpisodeChipRow(
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
-        verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+        verticalArrangement = Arrangement.spacedBy(ChipVerticalGap),
         modifier = modifier,
     ) {
         episodes.forEachIndexed { index, name ->
@@ -113,7 +116,7 @@ fun TagChipRow(
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
-        verticalArrangement = Arrangement.spacedBy(Dimens.xs),
+        verticalArrangement = Arrangement.spacedBy(ChipVerticalGap),
         itemVerticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {

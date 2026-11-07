@@ -107,7 +107,8 @@ class SearchViewModel @Inject constructor(
                         count = count,
                     )
                 }
-                .sortedByDescending { it.count },
+                // 与详情页线路同一排序规则，两处看到的顺序与数量才一致
+                .sortedBy { it.displayName },
             typeCounts = t.items.values
                 .groupingBy { it.item.typeName ?: "未分类" }
                 .eachCount()
@@ -246,6 +247,7 @@ class SearchViewModel @Inject constructor(
             .map { it.item }
             .filter { it.name == scored.item.name }
             .distinctBy { it.source }
+            .sortedBy { it.sourceDisplayName ?: it.source }
         detailRegistry.put(scored.key, DetailPayload(scored.item, candidates))
         return scored.key
     }

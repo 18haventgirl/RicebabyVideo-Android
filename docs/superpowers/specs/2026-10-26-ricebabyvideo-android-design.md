@@ -154,6 +154,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M22 | 全屏控件居中、资源去梯子依赖、三页签傻瓜化 | `feature/m22-foolproof` |
 | M23 | 播放器手势重排与进度条对齐 | `feature/m23-player-gestures` |
 | M23b | HUD 去掉末端小白点与长按进度条 | `feature/m23b-hud-cleanup` |
+| M24 | 首页标签先行与下拉刷新、播放页详情化、线路两处一致 | `feature/m24-home-detail-polish` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -307,3 +308,10 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 小白点是 M3 1.4.0 线性进度条的 stop indicator（还配一段 gap），传 `drawStopIndicator = {}` + `gapSize = 0.dp` 关掉，填充与轨道连成一条
   - 长按快进/快退（hudKind 4/5）不再画条，只留图标与「快进 2x」「快退 时间」；亮度/音量/拖动进度仍保留条
   - 装机截图复核：音量 47% 的条无白点无断口；长按右半屏浮层只剩双箭头图标 + 文字
+- **2026-11-07 M24 完成**（tag `v0.24.0-M24`，50 单测绿）：用户提的五处
+  - **首页标签先行**：标签列表原来只在内存缓存里，冷启动必须等网络才出现，骨架只盖住封面区，标签行"先空后跳"。`FeedTagStore` 新增按 `站点|类型` 缓存成功标签，bootstrap 先渲染缓存再静默刷新；首次安装连缓存都没有时用两行胶囊骨架把位置钉住。实测冷启动首帧即有完整标签行
+  - **播放页去掉线路切换**：竖屏信息区的「线路」整块换成「影片详情」（年份·地区·类型 / 导演 / 主演 / 简介 3 行可展开）+ 选集；`PlaybackState` 补 year/area/typeName/director/actor/blurb（简介走 `stripHtml`）。线路仍由播放器在失败或卡顿时自动顺延，只是不再给手动入口
+  - **搜索徽标与详情线路对不上**：根因是我们自己把搜索面板的来源徽标写死 `take(8)`，而详情页拿的是同名结果按采集站去重的全集（29 条）——同一批采集站，一处显示 8 个一处显示 29 个。去掉截断、两处统一按名称排序、徽标行加「线路」小标题与详情同名，并从某条线路点进详情时自动选中同一条（`indexOfFirst { it.source == target.source }`）。实测：搜索展开 29 个线路徽标 + 「剧情片 29」，详情页「展开全部 29 条线路」
+  - **胶囊行距**：`ChipRows` 纵向间距 4dp→2dp（横向仍 4dp），折叠行数换算同步改用新常量
+  - **首页下拉刷新与收紧**：网格套 M3 `PullToRefreshBox`（1.4.0 已是稳定 API），`HomeViewModel.refresh()` 作废标签缓存、重拉标签与当前标签第一页；搜索框上下 16/16→12/8、标签行 16/16→8/12、网格纵向 24→12。实测下拉出现刷新指示器且内容正常重载
+  - 截图重拍：01-home / 02-search / 04-player

@@ -2,6 +2,7 @@ package com.ricebaby.video.player
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.ricebaby.video.ui.common.stripHtml
 import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.ExoPlayer
 import com.ricebaby.video.data.db.FavoriteDao
@@ -31,6 +32,12 @@ data class PlaybackState(
     val selectedEpisode: Int = 0,
     val lines: List<PlaybackLine> = emptyList(),
     val activeLine: Int = 0,
+    val year: String = "",
+    val area: String = "",
+    val typeName: String = "",
+    val director: String = "",
+    val actor: String = "",
+    val blurb: String = "",
     /** 交给播放器的直连流地址；null 表示尚未就绪 */
     val streamUrl: String? = null,
     /** 代理地址后缀不含类型信息，需按原始流地址显式告知 Media3 */
@@ -120,6 +127,12 @@ class VideoPlayerViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         loading = false,
                         episodes = detail.episodes,
+                        year = detail.year.orEmpty(),
+                        area = detail.area.orEmpty(),
+                        typeName = detail.typeName.orEmpty(),
+                        director = detail.director.orEmpty(),
+                        actor = detail.actor.orEmpty(),
+                        blurb = stripHtml(detail.content.orEmpty()),
                         selectedEpisode = resume.first,
                         // 与 Web 端"智能代理"一致：流地址走站点 /api/proxy，绕开头端 DNS/UA/CORS 限制
                         streamUrl = raw?.let { proxyStreamUrl(base, it) },

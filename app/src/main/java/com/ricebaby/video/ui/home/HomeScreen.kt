@@ -37,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -57,6 +58,7 @@ import androidx.navigation.NavHostController
 import com.ricebaby.video.ui.components.PosterItem
 import com.ricebaby.video.ui.components.PosterSkeleton
 import com.ricebaby.video.ui.components.SegmentedToggle
+import com.ricebaby.video.ui.components.shimmer
 import com.ricebaby.video.ui.components.SelectChip
 import com.ricebaby.video.ui.components.TagChipRow
 import com.ricebaby.video.ui.search.SearchPanel
@@ -136,7 +138,7 @@ private fun BrowseFeed(
         // 页名交给系统栏与启动器图标承担，首屏直接从搜索框开始
         SearchEntry(
             onClick = onSearchEntryClick,
-            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.lg, bottom = Dimens.lg),
+            modifier = Modifier.padding(start = Dimens.screen, end = Dimens.screen, top = Dimens.md, bottom = Dimens.sm),
         )
 
         // 电影 / 剧集
@@ -153,7 +155,16 @@ private fun BrowseFeed(
                 selected = uiState.activeTag,
                 onSelect = { viewModel.setTag(it) },
                 onManage = { tagManagerOpen = true },
-                modifier = Modifier.padding(horizontal = Dimens.screen, vertical = Dimens.lg),
+                modifier = Modifier.padding(
+                    start = Dimens.screen, end = Dimens.screen, top = Dimens.sm, bottom = Dimens.md,
+                ),
+            )
+        } else {
+            // 首次安装连标签缓存都没有时，先把这块位置占住，数据回来不会整体下移
+            TagRowSkeleton(
+                modifier = Modifier.padding(
+                    start = Dimens.screen, end = Dimens.screen, top = Dimens.sm, bottom = Dimens.md,
+                ),
             )
         }
 
@@ -165,11 +176,21 @@ private fun BrowseFeed(
             )
         }
 
+        var refreshing by remember { mutableStateOf(false) }
+        LaunchedEffect(uiState.loading) { if (!uiState.loading) refreshing = false }
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = {
+                refreshing = true
+                viewModel.refresh()
+            },
+            modifier = Modifier.fillMaxSize(),
+        ) {
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Adaptive(Dimens.gridMin),
             horizontalArrangement = Arrangement.spacedBy(Dimens.md),
-            verticalArrangement = Arrangement.spacedBy(Dimens.lg),
+            verticalArrangement = Arrangement.spacedBy(Dimens.md),
             contentPadding = PaddingValues(start = Dimens.screen, end = Dimens.screen, bottom = Dimens.scrollEnd),
             modifier = Modifier.fillMaxSize(),
         ) {
@@ -204,6 +225,26 @@ private fun BrowseFeed(
                     cornerBadge = item.rate.takeIf { it.isNotBlank() },
                     onClick = { onPickTitle(item.title) },
                 )
+            }
+        }
+        }
+    }
+}
+
+/** 标签还没落地时先占两行高度，避免首屏内容整体下移 */
+@Composable
+private fun TagRowSkeleton(modifier: Modifier = Modifier) {
+    val widths = listOf(48.dp, 60.dp, 72.dp, 60.dp)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(2) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.xs)) {
+                widths.forEach { width ->
+                    Box(
+                        modifier = Modifier
+                            .size(width = width, height = 32.dp)
+                            .shimmer(RoundedCornerShape(Dimens.pillCorner)),
+                    )
+                }
             }
         }
     }
