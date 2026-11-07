@@ -168,7 +168,10 @@ class SearchViewModel @Inject constructor(
     private fun onSearchEvent(event: SearchEvent, query: String) {
         val year = Year.now().value
         when (event) {
-            is SearchEvent.Start -> Unit
+            is SearchEvent.Start -> transient.value = transient.value.copy(
+                phase = SearchPhase.Streaming,
+                progress = 0 to event.totalSources,
+            )
             is SearchEvent.Videos -> {
                 val additions = event.videos
                     .filter { hasMinimumMatch(it.name, query) }
@@ -177,10 +180,17 @@ class SearchViewModel @Inject constructor(
                         valueTransform = { ScoredVideo(it, "${it.source}:${it.vodId}", relevanceScore(it, query, year)) },
                     )
                 if (additions.isNotEmpty()) {
-                    transient.value = transient.value.copy(items = transient.value.items + additions, message = null)
+                    transient.value = transient.value.copy(
+                        items = transient.value.items + additions,
+                        phase = SearchPhase.Streaming,
+                        message = null,
+                    )
                 }
             }
-            is SearchEvent.Progress -> transient.value = transient.value.copy(progress = event.completed to event.total)
+            is SearchEvent.Progress -> transient.value = transient.value.copy(
+                phase = SearchPhase.Streaming,
+                progress = event.completed to event.total,
+            )
             is SearchEvent.Complete -> transient.value = transient.value.copy(
                 phase = SearchPhase.Done,
                 progress = null,

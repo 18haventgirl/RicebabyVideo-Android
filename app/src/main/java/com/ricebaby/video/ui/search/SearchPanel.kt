@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,9 +22,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -57,11 +55,10 @@ import com.ricebaby.video.ui.components.PosterSkeleton
 import com.ricebaby.video.ui.components.SelectChip
 import com.ricebaby.video.ui.theme.Dimens
 
-/** 首页展开的搜索面板：输入、历史、来源/类型筛选与流式结果 */
-@OptIn(ExperimentalLayoutApi::class)
 /** 准备与检索期间都算「在忙」，别在这一段露出空态 */
 private val busyPhases = setOf(SearchPhase.Preparing, SearchPhase.Streaming)
 
+/** 首页展开的搜索面板：输入、历史、检索进度与流式结果 */
 @Composable
 fun SearchPanel(
     navController: NavHostController,
@@ -161,37 +158,21 @@ fun SearchPanel(
             }
         }
 
-        if (uiState.phase == SearchPhase.Streaming || uiState.phase == SearchPhase.Preparing) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.sm),
-                modifier = Modifier.padding(horizontal = Dimens.screen),
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                Text(
-                    when {
-                        uiState.phase == SearchPhase.Preparing -> "正在准备资源…"
-                        uiState.progress != null ->
-                            "已检索 ${uiState.progress!!.first}/${uiState.progress!!.second} 个资源 · 找到 ${uiState.results.size} 个结果"
-                        else -> "正在检索…"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    "取消",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Dimens.sm))
-                        .clickable(onClick = viewModel::cancel)
-                        .padding(horizontal = Dimens.sm, vertical = 2.dp),
-                )
-            }
+        if (uiState.phase in busyPhases) {
+            val scanned = uiState.progress
+            SearchProgressBar(
+                fraction = scanned?.let { (done, total) -> if (total > 0) done.toFloat() / total else null },
+                caption = when {
+                    uiState.phase == SearchPhase.Preparing -> "正在准备资源…"
+                    scanned != null -> "正在检索 ${scanned.first}/${scanned.second} 个资源"
+                    else -> "正在检索…"
+                },
+                onCancel = viewModel::cancel,
+            )
             VGap(Dimens.md)
         }
 
-        if (uiState.sourceCounts.isNotEmpty() || uiState.typeCounts.isNotEmpty()) {
+        if (uiState.phase !in busyPhases && (uiState.sourceCounts.isNotEmpty() || uiState.typeCounts.isNotEmpty())) {
             FlowRow(
                 maxLines = if (filtersExpanded) Int.MAX_VALUE else 2,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
@@ -270,6 +251,56 @@ fun SearchPanel(
 @Composable
 private fun VGap(height: Dp) {
     Box(Modifier.fillMaxWidth().height(height))
+}
+
+/**
+ * 检索期间只说一件事：跑到哪了。
+ * fraction 为空表示还数不出总进度（准备阶段、站点没报总数），用不确定态滚动。
+ */
+@Composable
+private fun SearchProgressBar(fraction: Float?, caption: String, onCancel: () -> Unit) {
+    val barModifier = Modifier
+        .fillMaxWidth()
+        .height(4.dp)
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.screen),
+        verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+    ) {
+        if (fraction == null) {
+            LinearProgressIndicator(
+                modifier = barModifier,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                gapSize = 0.dp,
+            )
+        } else {
+            LinearProgressIndicator(
+                progress = { fraction },
+                modifier = barModifier,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                gapSize = 0.dp,
+                drawStopIndicator = {},
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                caption,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "取消",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(Dimens.sm))
+                    .clickable(onClick = onCancel)
+                    .padding(horizontal = Dimens.sm, vertical = 2.dp),
+            )
+        }
+    }
 }
 
 @Composable
