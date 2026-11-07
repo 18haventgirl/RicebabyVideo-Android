@@ -464,7 +464,7 @@ fun VideoPlayerScreen(
                 }
             }
 
-            // 手势反馈浮层：拖动时给出当前值，抬手 0.7 秒后消失
+            // 手势反馈浮层：进行中常驻，抬手后短暂停留再消失
             if (hudKind != 0 && !inPip) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -508,12 +508,17 @@ fun VideoPlayerScreen(
                         color = Color.White,
                         modifier = Modifier.padding(top = Dimens.xs),
                     )
-                    LinearProgressIndicator(
-                        progress = { ratio.coerceIn(0f, 1f) },
-                        modifier = Modifier.padding(top = Dimens.sm).width(112.dp),
-                        color = Color.White,
-                        trackColor = Color.White.copy(alpha = 0.28f),
-                    )
+                    // 长按快进/快退只需要读出方向与时间，条没意义；亮度音量保留条但去掉末端小白点
+                    if (hudKind != 4 && hudKind != 5) {
+                        LinearProgressIndicator(
+                            progress = { ratio.coerceIn(0f, 1f) },
+                            modifier = Modifier.padding(top = Dimens.sm).width(112.dp),
+                            color = Color.White,
+                            trackColor = Color.White.copy(alpha = 0.28f),
+                            gapSize = 0.dp,
+                            drawStopIndicator = {},
+                        )
+                    }
                 }
             }
 

@@ -153,6 +153,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M21b | 图标横向改回外轮廓居中 | `feature/m21b-icon-horizontal` |
 | M22 | 全屏控件居中、资源去梯子依赖、三页签傻瓜化 | `feature/m22-foolproof` |
 | M23 | 播放器手势重排与进度条对齐 | `feature/m23-player-gestures` |
+| M23b | HUD 去掉末端小白点与长按进度条 | `feature/m23b-hud-cleanup` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -302,3 +303,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **手势重排**（用户要求）：双击画面任意位置 = 暂停/继续；长按右半屏 = 记住原速并切 2x，松手恢复；长按左半屏 = 按住期间暂停并按 2x 速率持续回退进度、松手从该位置恢复播放。横拖调进度与竖拖亮度/音量保留，长按计时用 `viewConfiguration.longPressTimeoutMillis`，手指移动超 slop 即由拖拽接管（`awaitRelease` 抛 `GestureCancellationException` 走 finally 复位）
   - 踩坑记一笔：`awaitLongPressOrCancellation` / `awaitReleaseOrCancellation` 在 foundation 1.12.1 **不是公开 API**（`PressGestureScope` 只有 `awaitRelease`/`tryAwaitRelease`，已查源码），长按判定与按住循环要自己在 `onPress` 里用 `pressScope.launch` + `delay` 搭
   - 实测（Pixel_9）：双击出暂停态（中央按钮变「播放」、底栏同变）；长按右 HUD「快进 2x」常驻并在松手恢复；长按左 1.3s→2:10:08、3.5s→2:10:02 按 2x 稳定回退，松手回播放
+- **2026-11-07 M23b 完成**（tag `v0.23.1-M23b`，50 单测绿）：用户指出 HUD 亮度/音量条末端的小白点也不在条上，且长按加速时没必要显示进度条
+  - 小白点是 M3 1.4.0 线性进度条的 stop indicator（还配一段 gap），传 `drawStopIndicator = {}` + `gapSize = 0.dp` 关掉，填充与轨道连成一条
+  - 长按快进/快退（hudKind 4/5）不再画条，只留图标与「快进 2x」「快退 时间」；亮度/音量/拖动进度仍保留条
+  - 装机截图复核：音量 47% 的条无白点无断口；长按右半屏浮层只剩双箭头图标 + 文字
