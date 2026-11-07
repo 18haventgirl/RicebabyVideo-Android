@@ -12,7 +12,7 @@ import javax.inject.Singleton
 import okhttp3.OkHttpClient
 
 /**
- * 播放器网络层复用 App 的 OkHttpClient，继承其代理设置；
+ * 播放器网络层复用 App 的 OkHttpClient；
  * 流媒体首包常经站点代理转发到采集站，超时需比 API 请求更宽松。
  */
 @Singleton

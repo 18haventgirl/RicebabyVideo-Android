@@ -72,7 +72,7 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             val instance = settingsRepository.state.first().activeInstance
             if (instance == null) {
-                _uiState.value = _uiState.value.copy(loading = false, error = "先在设置里选择观影站点")
+                _uiState.value = _uiState.value.copy(loading = false, error = "站点还没准备好，请稍后重试")
                 return@launch
             }
             val sourceEntity = sourceDao.enabledOnce().firstOrNull { it.id == target.source }

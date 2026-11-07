@@ -27,8 +27,8 @@ android {
         applicationId = "com.ricebaby.video"
         minSdk = 26
         targetSdk = 37
-        versionCode = 25
-        versionName = "0.21.1-M21b"
+        versionCode = 26
+        versionName = "0.22.0-M22"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // 站点地址内置在安装包里，新用户不必再手输；口令只存摘要，原文不进仓库。

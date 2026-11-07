@@ -138,7 +138,7 @@ fun UnlockScreen(viewModel: UnlockViewModel) {
                 },
             )
             Text(
-                uiState.error ?: "忘记口令？进入后可在「设置」里管理站点。",
+                uiState.error ?: "口令由分享者提供，输入一次即可。",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (uiState.error != null) {
                     MaterialTheme.colorScheme.error

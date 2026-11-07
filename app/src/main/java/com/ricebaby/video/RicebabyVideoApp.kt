@@ -23,7 +23,7 @@ class RicebabyVideoApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
-        // 上一次没同步成功的老用户，冷启动再兜一次，不用去设置页手动点
+        // 上一次没同步成功的老用户，冷启动再兜一次
         appScope.launch { sourceBootstrap.ensureReady() }
     }
 

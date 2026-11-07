@@ -13,13 +13,12 @@
 - 观看进度自动记录，下次打开直接续播
 
 **待看**
-- 收藏与观看记录保存在设备本地
-- 支持一键导出与恢复备份
+- 收藏保存在设备本地，「历史」页独立记录观看进度，点击即可续播
 
 **站点**
 - 站点地址已内置，首次打开只需输入口令
 - 资源订阅自动就绪，装完直接搜索与播放
-- 多站点实例切换，支持站点访问密码，也可改用自己的站点
+- 也可在口令页改用自己的站点地址
 
 ## 界面预览
 
@@ -32,8 +31,8 @@
 | <img src="docs/screenshots/02-search.jpg" alt="搜索：来源与类型筛选、结果网格" width="230"> | <img src="docs/screenshots/03-detail.jpg" alt="详情：影片信息与线路选集" width="230"> |
 | 播放 | 待看 |
 | <img src="docs/screenshots/04-player.jpg" alt="播放：竖屏内嵌播放器" width="230"> | <img src="docs/screenshots/05-watchlist.jpg" alt="待看：收藏与观看记录" width="230"> |
-| 设置 | |
-| <img src="docs/screenshots/06-settings.jpg" alt="设置：站点、资源与备份" width="230"> | |
+| 历史 | |
+| <img src="docs/screenshots/06-history.jpg" alt="历史：观看记录与续播" width="230"> | |
 
 <img src="docs/screenshots/07-fullscreen.jpg" alt="全屏播放" width="620">
 
@@ -56,5 +55,5 @@ JAVA_HOME=<JDK 路径> ./gradlew :app:assembleDebug
 ## 说明
 
 - 本项目不含服务端代码，数据采集与代理由站点实例提供
-- 收藏与观看记录仅保存在设备本地，多设备之间不同步
+- 收藏与观看记录仅保存在设备本地，多设备之间不同步，卸载即清空
 - 暂未实现：弹幕、跳过片头片尾

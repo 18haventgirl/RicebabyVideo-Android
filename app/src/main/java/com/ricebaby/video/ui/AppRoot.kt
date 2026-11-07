@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -28,7 +28,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ricebaby.video.ui.detail.DetailScreen
 import com.ricebaby.video.ui.home.HomeScreen
-import com.ricebaby.video.ui.settings.SettingsScreen
+import com.ricebaby.video.ui.history.HistoryScreen
 import com.ricebaby.video.ui.unlock.BrandSplash
 import com.ricebaby.video.ui.unlock.UnlockScreen
 import com.ricebaby.video.ui.unlock.UnlockViewModel
@@ -42,7 +42,7 @@ private val chromelessRoutes = listOf("video")
 val topTabs = listOf(
     TopTab("home", "首页", Icons.Outlined.Home),
     TopTab("watchlist", "待看", Icons.Outlined.Bookmarks),
-    TopTab("settings", "设置", Icons.Outlined.Settings),
+    TopTab("history", "历史", Icons.Outlined.History),
 )
 
 @Composable
@@ -109,7 +109,7 @@ private fun AppShell(navController: NavHostController) {
         ) {
             composable("home") { HomeScreen(navController = navController) }
             composable("watchlist") { WatchlistScreen(navController = navController) }
-            composable("settings") { SettingsScreen() }
+            composable("history") { HistoryScreen(navController = navController) }
             composable(
                 route = "detail?vid={vid}",
                 arguments = listOf(

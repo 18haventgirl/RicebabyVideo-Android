@@ -135,7 +135,7 @@ class SearchViewModel @Inject constructor(
             searchHistoryDao.upsert(SearchHistoryEntity(query, System.currentTimeMillis()))
             val instance = settingsRepository.state.first().activeInstance
             if (instance == null) {
-                transient.value = transient.value.copy(phase = SearchPhase.Failed, message = "先在设置里添加并选择观影站点")
+                transient.value = transient.value.copy(phase = SearchPhase.Failed, message = "站点还没准备好，请稍后重试")
                 return@launch
             }
             val sources = prepareSources()
@@ -145,7 +145,7 @@ class SearchViewModel @Inject constructor(
     }
 
     /**
-     * 资源为空时不再把用户支使去设置页：当场同步一次，成功就继续搜。
+     * 资源为空时当场同步一次，成功就继续搜。
      * 返回空列表表示已经把失败文案写进状态了。
      */
     private suspend fun prepareSources(): List<VideoSourceEntity> {

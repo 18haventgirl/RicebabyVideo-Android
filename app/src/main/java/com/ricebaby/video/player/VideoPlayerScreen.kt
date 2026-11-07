@@ -18,10 +18,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.Row
 
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -77,6 +79,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -439,7 +442,7 @@ fun VideoPlayerScreen(
                 Row(
                     modifier = Modifier.align(Alignment.TopStart).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)))
-                        .then(if (fullscreen) Modifier.displayCutoutPadding() else Modifier)
+                        .then(if (fullscreen) cutoutSafePadding() else Modifier)
                         .padding(start = Dimens.sm, end = Dimens.sm, top = Dimens.xs, bottom = Dimens.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -489,7 +492,7 @@ fun VideoPlayerScreen(
                 Column(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))))
-                        .then(if (fullscreen) Modifier.displayCutoutPadding() else Modifier)
+                        .then(if (fullscreen) cutoutSafePadding() else Modifier)
                         .padding(horizontal = Dimens.sm, vertical = Dimens.xs),
                 ) {
                     var seeking by remember { mutableStateOf(false) }
@@ -672,6 +675,23 @@ private fun ControlButton(
     IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
         Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(20.dp))
     }
+}
+
+/**
+ * 横屏挖孔只落在某一侧：整条控制栏单侧避让会把所有控件推偏（实测左留白比右多一个挖孔宽）。
+ * 横向改成对称留白，控件 cluster 才在画面正中；竖向仍按挖孔避让以兼容角孔机型。
+ */
+@Composable
+private fun cutoutSafePadding(): Modifier {
+    val insets = WindowInsets.displayCutout.asPaddingValues()
+    val dir = LocalLayoutDirection.current
+    val horizontal = maxOf(insets.calculateLeftPadding(dir), insets.calculateRightPadding(dir))
+    return Modifier.padding(
+        start = horizontal,
+        end = horizontal,
+        top = insets.calculateTopPadding(),
+        bottom = insets.calculateBottomPadding(),
+    )
 }
 
 /** 全屏时允许画面延伸到刘海/挖孔区，退出后回到默认 */

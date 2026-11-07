@@ -70,7 +70,7 @@ class UnlockViewModel @Inject constructor(
                     baseUrlRaw = BuildConfig.DEFAULT_BASE_URL,
                 )
                 _uiState.update { it.copy(busy = false, unlocked = true) }
-                // 资源订阅当场补齐，否则搜片和播放都要先去设置页点一次
+                // 资源订阅当场补齐，首启即可搜索与播放
                 sourceBootstrap.ensureReady()
             } else {
                 _uiState.update {

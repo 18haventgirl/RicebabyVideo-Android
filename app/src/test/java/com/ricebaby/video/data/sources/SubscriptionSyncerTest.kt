@@ -80,4 +80,36 @@ class SubscriptionSyncerTest {
         assertEquals(1, outcome.errors.size)
         assertTrue(outcome.errors[0].contains("127.0.0.1"))
     }
+
+    @Test
+    fun `直连失败时改走站点代理取清单`() = runBlocking {
+        val site = MockWebServer()
+        site.start()
+        try {
+            server.enqueue(MockResponse().setResponseCode(500))
+            site.enqueue(MockResponse().setBody("""[{"id":"p","name":"代理取回","baseUrl":"https://p.com"}]"""))
+            val siteBase = site.url("/").toString().removeSuffix("/")
+            val outcome = syncer.sync(server.url("/list.json").toString(), siteBase)
+            assertEquals(1, outcome.accepted)
+            assertEquals("代理取回", dao.stored["p"]?.name)
+            assertTrue(site.takeRequest().path!!.startsWith("/api/proxy?url="))
+        } finally {
+            site.shutdown()
+        }
+    }
+
+    @Test
+    fun `直连与站点代理都失败时不写库`() = runBlocking {
+        val site = MockWebServer()
+        site.start()
+        try {
+            server.enqueue(MockResponse().setResponseCode(500))
+            site.enqueue(MockResponse().setResponseCode(502))
+            val outcome = syncer.sync(server.url("/list.json").toString(), site.url("/").toString().removeSuffix("/"))
+            assertEquals(0, outcome.accepted)
+            assertTrue(dao.stored.isEmpty())
+        } finally {
+            site.shutdown()
+        }
+    }
 }

@@ -92,7 +92,7 @@ class HomeViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     init {
-        // 站点往往是「进过一次首页」之后才在设置里添加的：只读一次 activeInstance 会让
+        // 站点可能在解锁后才写入：只读一次 activeInstance 会让
         // 新用户配置完回到首页仍停在空态，所以跟随站点选择变化自动重试。
         viewModelScope.launch {
             settingsRepository.state
@@ -112,7 +112,7 @@ class HomeViewModel @Inject constructor(
         cancelFetch()
         internal.value = Internal(isTv = internal.value.isTv, loading = true)
         if (base == null) {
-            internal.value = internal.value.copy(loading = false, error = "先在设置里添加并选择观影站点")
+            internal.value = internal.value.copy(loading = false, error = "站点还没准备好，请稍后重试")
             return
         }
         val serverTags = loadTags(base, if (internal.value.isTv) "tv" else "movie")
