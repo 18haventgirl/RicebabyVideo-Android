@@ -15,6 +15,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.GestureCancellationException
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.outlined.BrightnessHigh
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Pause
@@ -74,11 +77,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlin.math.max
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -93,6 +98,7 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import com.ricebaby.video.ui.components.EpisodeChipRow
 import com.ricebaby.video.ui.components.LineChipRow
 import com.ricebaby.video.ui.theme.Dimens
@@ -130,8 +136,14 @@ fun VideoPlayerScreen(
     var dragAccumY by remember { mutableFloatStateOf(0f) }
     var seekBaseMs by remember { mutableLongStateOf(0L) }
     var seekPreviewMs by remember { mutableLongStateOf(0L) }
-    var hudKind by remember { mutableIntStateOf(0) } // 1 亮度 2 音量 3 进度
+    var hudKind by remember { mutableIntStateOf(0) } // 1 亮度 2 音量 3 进度 4 快进 5 快退
     var hudValue by remember { mutableFloatStateOf(0f) }
+    // 手势/长按进行期间浮层常驻；音量与亮度各自在手势内浮点累加，保证跟手且两侧同曲线
+    var gestureActive by remember { mutableStateOf(false) }
+    var gestureVolume by remember { mutableFloatStateOf(0f) }
+    var gestureBrightness by remember { mutableFloatStateOf(0.5f) }
+    var speedBeforeHold by remember { mutableFloatStateOf(1f) }
+    val pressScope = rememberCoroutineScope()
 
     val player = remember {
         viewModel.createPlayer().apply {
@@ -157,9 +169,9 @@ fun VideoPlayerScreen(
         }
     }
 
-    // 手势反馈浮层：抬手后短暂停留再消失
-    LaunchedEffect(hudKind, hudValue, seekPreviewMs) {
-        if (hudKind != 0) {
+    // 手势反馈浮层：手势进行中常驻，抬手后短暂停留再消失
+    LaunchedEffect(hudKind, hudValue, seekPreviewMs, gestureActive) {
+        if (hudKind != 0 && !gestureActive) {
             delay(700)
             hudKind = 0
         }
@@ -295,6 +307,7 @@ fun VideoPlayerScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         Box(modifier = fullscreenModifier.pointerInput(Unit) {
+            val longPressTimeoutMs = viewConfiguration.longPressTimeoutMillis
             detectTapGestures(
                 onTap = {
                     if (inPip) {
@@ -303,10 +316,51 @@ fun VideoPlayerScreen(
                         controlsVisible = !controlsVisible
                     }
                 },
-                onDoubleTap = { offset ->
-                    val jump = if (offset.x < size.width / 2) -10_000L else 10_000L
-                    player.seekTo((player.currentPosition + jump).coerceAtLeast(0))
+                onDoubleTap = {
+                    if (player.isPlaying) player.pause() else player.play()
                     controlsVisible = true
+                },
+                onPress = { offset ->
+                    // PressGestureScope 只暴露 awaitRelease，长按判定与按住循环自己搭
+                    val left = offset.x < size.width / 2
+                    val hold = pressScope.launch {
+                        delay(longPressTimeoutMs)
+                        gestureActive = true
+                        controlsVisible = false
+                        if (left) {
+                            // Media3 的 PlaybackParameters 要求 speed>0，倒放做不到：
+                            // 按住期间暂停并按 2x 速率持续回退进度，松手从该位置恢复播放
+                            hudKind = 5
+                            player.pause()
+                            val baseMs = player.currentPosition
+                            val startMs = android.os.SystemClock.elapsedRealtime()
+                            seekPreviewMs = baseMs
+                            while (true) {
+                                val back = (android.os.SystemClock.elapsedRealtime() - startMs) * 2
+                                seekPreviewMs = (baseMs - back).coerceAtLeast(0L)
+                                player.seekTo(seekPreviewMs)
+                                hudValue = if (durationMs > 0) seekPreviewMs.toFloat() / durationMs else 0f
+                                delay(120)
+                            }
+                        } else {
+                            hudKind = 4
+                            speedBeforeHold = player.playbackParameters.speed
+                            player.setPlaybackSpeed(2f)
+                        }
+                    }
+                    try {
+                        awaitRelease()
+                    } catch (_: GestureCancellationException) {
+                        // 横向/纵向拖拽接管了这次按压
+                    } finally {
+                        hold.cancel()
+                        when (hudKind) {
+                            5 -> player.play()
+                            4 -> player.setPlaybackSpeed(speedBeforeHold)
+                        }
+                        gestureActive = false
+                        hudKind = 0
+                    }
                 },
             )
         }.pointerInput(durationMs) {
@@ -320,12 +374,23 @@ fun VideoPlayerScreen(
                     dragStartY = offset.y
                     seekBaseMs = player.currentPosition
                     seekPreviewMs = seekBaseMs
+                    gestureActive = true
+                    val max = audio?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
+                    gestureVolume = if (max > 0) {
+                        (audio?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0).toFloat() / max
+                    } else 0f
+                    gestureBrightness = activity?.window?.attributes?.screenBrightness
+                        ?.takeIf { it >= 0f } ?: 0.5f
                 },
                 onDragEnd = {
                     if (dragAxis == 1 && durationMs > 0) player.seekTo(seekPreviewMs)
                     dragAxis = 0
+                    gestureActive = false
                 },
-                onDragCancel = { dragAxis = 0 },
+                onDragCancel = {
+                    dragAxis = 0
+                    gestureActive = false
+                },
             ) { change, drag ->
                 dragAccumX += drag.x
                 dragAccumY += drag.y
@@ -348,19 +413,24 @@ fun VideoPlayerScreen(
                         dragStartY = change.position.y
                         if (dragStartX < size.width / 2) {
                             val lp = activity?.window?.attributes ?: return@detectDragGestures
-                            val current = if (lp.screenBrightness >= 0f) lp.screenBrightness else 0.5f
-                            val next = (current + step).coerceIn(0.01f, 1f)
-                            lp.screenBrightness = next
+                            gestureBrightness = (gestureBrightness + step).coerceIn(0.01f, 1f)
+                            lp.screenBrightness = gestureBrightness
                             activity?.window?.attributes = lp
                             hudKind = 1
-                            hudValue = next
+                            hudValue = gestureBrightness
                         } else {
                             val max = audio?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
-                            val cur = audio?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
-                            val next = (cur + step * max).toInt().coerceIn(0, max)
-                            audio?.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0)
+                            gestureVolume = (gestureVolume + step).coerceIn(0f, 1f)
+                            if (max > 0) {
+                                // 增量在小数里累加，落到系统音量时才取整格：小幅滑动也会动
+                                audio?.setStreamVolume(
+                                    AudioManager.STREAM_MUSIC,
+                                    (gestureVolume * max).roundToInt(),
+                                    0,
+                                )
+                            }
                             hudKind = 2
-                            hudValue = if (max > 0) next.toFloat() / max else 0f
+                            hudValue = gestureVolume
                         }
                     }
                 }
@@ -415,8 +485,18 @@ fun VideoPlayerScreen(
                             "音量 ${(hudValue * 100).toInt()}%",
                             hudValue,
                         )
+                        4 -> Triple(
+                            Icons.Filled.FastForward,
+                            "快进 2x",
+                            if (durationMs > 0) player.currentPosition.toFloat() / durationMs else 0f,
+                        )
+                        5 -> Triple(
+                            Icons.Filled.FastRewind,
+                            "快退 ${fmt(seekPreviewMs)}",
+                            if (durationMs > 0) seekPreviewMs.toFloat() / durationMs else 0f,
+                        )
                         else -> Triple(
-                            Icons.Filled.Forward10,
+                            if (seekPreviewMs < seekBaseMs) Icons.Filled.Replay10 else Icons.Filled.Forward10,
                             "${fmt(seekPreviewMs)} / ${fmt(durationMs)}",
                             if (durationMs > 0) seekPreviewMs.toFloat() / durationMs else 0f,
                         )
@@ -716,8 +796,11 @@ private fun SeekBar(
 ) {
     var widthPx by remember { mutableFloatStateOf(1f) }
     var lastFraction by remember { mutableFloatStateOf(fraction) }
+    val density = LocalDensity.current
     val trackHeight = if (expanded) 8.dp else 5.dp
-    val thumbRadius = if (expanded) 9.dp else 6.dp
+    // 小球半径明显大于轨道高度，否则同色小球会「融」进填充里看不见
+    val thumbRadius = if (expanded) 11.dp else 8.dp
+    val thumbRadiusPx = with(density) { thumbRadius.toPx() }
     Box(
         modifier = modifier
             .height(30.dp)
@@ -727,13 +810,13 @@ private fun SeekBar(
                     onDragEnd = { onCommit(lastFraction) },
                     onDragCancel = { onCommit(lastFraction) },
                 ) { change, _ ->
-                    lastFraction = (change.position.x / widthPx).coerceIn(0f, 1f)
+                    lastFraction = SeekBarMath.fractionAt(change.position.x, widthPx, thumbRadiusPx)
                     onDrag(lastFraction)
                 }
             }
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
-                    val target = (offset.x / widthPx).coerceIn(0f, 1f)
+                    val target = SeekBarMath.fractionAt(offset.x, widthPx, thumbRadiusPx)
                     onDrag(target)
                     onCommit(target)
                 }
@@ -742,6 +825,7 @@ private fun SeekBar(
     ) {
         Box(
             Modifier
+                .padding(horizontal = thumbRadius)
                 .fillMaxWidth()
                 .height(trackHeight)
                 .clip(RoundedCornerShape(Dimens.pillCorner))
@@ -756,7 +840,12 @@ private fun SeekBar(
         }
         Box(
             Modifier
-                .offset(x = if (widthPx > 1f) (fraction.coerceIn(0f, 1f) * widthPx).dp - thumbRadius else 0.dp)
+                .shadow(2.dp, CircleShape, clip = false)
+                .offset(
+                    x = with(density) {
+                        (SeekBarMath.fillEndPx(fraction, widthPx, thumbRadiusPx) - thumbRadiusPx).toDp()
+                    },
+                )
                 .size(thumbRadius * 2)
                 .clip(CircleShape)
                 .background(Color.White),

@@ -152,6 +152,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M21 | 图标按视觉重心居中 + 资源订阅自动就绪 | `feature/m21-icon-center-auto-sync` |
 | M21b | 图标横向改回外轮廓居中 | `feature/m21b-icon-horizontal` |
 | M22 | 全屏控件居中、资源去梯子依赖、三页签傻瓜化 | `feature/m22-foolproof` |
+| M23 | 播放器手势重排与进度条对齐 | `feature/m23-player-gestures` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -294,3 +295,10 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 环境限制记一笔：本模拟器直连 Pages 的 `api/douban/tags`、`api/search-parallel` 会挂（国内路由），`api/auth` 却 1.5s 通；用户手机首页直连正常。故「无代理整链路」的最终确认以用户手机为准，模拟器侧验到「资源自动就绪 + 有代理整链路 + 单测锁兜底顺序」
   - **三页签傻瓜化**：底部只留 首页/待看/历史；待看=收藏、历史=观看记录独立成页（`ui/history/HistoryScreen`）。设置页整页删除：`SettingsScreen/SettingsViewModel`、备份 UI 与 `BackupRepository/BackupCodec` 及其测试一并删（用户明确不要备份；代价是卸载即丢本地数据，README 已写明）。口令页「使用自己的站点地址」保留为唯一进阶入口。四处「去设置里…」的失效文案改为「站点还没准备好，请稍后重试」/「口令由分享者提供」
   - 截图全组重拍（底栏变了），06-settings 换成 06-history
+- **2026-11-07 M23 完成**（tag `v0.23.0-M23`，50 单测绿）：播放器手势与进度条三处缺陷
+  - **小球不在填充末端**：自绘进度条把像素当 dp 用（`offset(x = (fraction * widthPx).dp …)`），2.625 密度下球心跑到填充前约 1.6 倍处；同时球半径 6~9dp 与轨道 5~8dp 同色同径，视觉上「融」进填充看不见。改为抽 `SeekBarMath`（轨道两端各缩一个滑块半径，球心与填充末端共用同一条内宽）+ 球半径放大到 8/11dp 并加 2dp 投影。装机截图：白球精确停在白色填充末端，右侧灰色轨道继续延伸
+  - **音量不跟手、左右手感不一样**：亮度是浮点累加，音量却「每事件读回整数音量 + 截断小数增量」，小幅滑动增量不足一格被截成 0 → 几乎不动。改为手势内 `gestureVolume` 浮点累加、应用时 `roundToInt`，与亮度同一条「位移/屏高」曲线。实测 100px 上滑 1→3、120px 下滑 3→1
+  - **HUD 显示**：`LaunchedEffect(hudKind, hudValue, …)` 的 0.7s 自动隐藏没区分「手势进行中」，手指按住不动浮层就消失。加 `gestureActive`，进行中常驻、抬手才计时；进度 HUD 图标按回退/快进方向区分
+  - **手势重排**（用户要求）：双击画面任意位置 = 暂停/继续；长按右半屏 = 记住原速并切 2x，松手恢复；长按左半屏 = 按住期间暂停并按 2x 速率持续回退进度、松手从该位置恢复播放。横拖调进度与竖拖亮度/音量保留，长按计时用 `viewConfiguration.longPressTimeoutMillis`，手指移动超 slop 即由拖拽接管（`awaitRelease` 抛 `GestureCancellationException` 走 finally 复位）
+  - 踩坑记一笔：`awaitLongPressOrCancellation` / `awaitReleaseOrCancellation` 在 foundation 1.12.1 **不是公开 API**（`PressGestureScope` 只有 `awaitRelease`/`tryAwaitRelease`，已查源码），长按判定与按住循环要自己在 `onPress` 里用 `pressScope.launch` + `delay` 搭
+  - 实测（Pixel_9）：双击出暂停态（中央按钮变「播放」、底栏同变）；长按右 HUD「快进 2x」常驻并在松手恢复；长按左 1.3s→2:10:08、3.5s→2:10:02 按 2x 稳定回退，松手回播放
