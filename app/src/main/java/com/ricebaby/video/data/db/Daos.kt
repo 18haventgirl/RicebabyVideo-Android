@@ -19,6 +19,9 @@ interface SourceDao {
     @Query("SELECT * FROM video_sources")
     suspend fun allOnce(): List<VideoSourceEntity>
 
+    @Query("SELECT MAX(updatedAt) FROM video_sources")
+    suspend fun lastSyncedAt(): Long?
+
     @Query("DELETE FROM video_sources WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<String>)
 

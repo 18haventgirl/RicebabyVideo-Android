@@ -20,6 +20,7 @@ class FakeSourceDao : SourceDao {
     override fun observeEnabled(): Flow<List<VideoSourceEntity>> = throw UnsupportedOperationException()
     override suspend fun enabledOnce(): List<VideoSourceEntity> = stored.values.toList()
     override suspend fun allOnce(): List<VideoSourceEntity> = stored.values.toList()
+    override suspend fun lastSyncedAt(): Long? = stored.values.maxOfOrNull { it.updatedAt }
     override suspend fun deleteByIds(ids: List<String>) { ids.forEach { stored.remove(it) } }
     override fun observeCount(): Flow<Int> = throw UnsupportedOperationException()
     override suspend fun upsertAll(sources: List<VideoSourceEntity>) { sources.forEach { stored[it.id] = it } }

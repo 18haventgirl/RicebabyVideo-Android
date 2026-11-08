@@ -43,7 +43,11 @@ class SourceBootstrap @Inject constructor(
         // 旧版本导入过的成人源要就地清掉，否则它们一直躺在库里参与搜索
         val adult = dao.allOnce().filter { SourcePolicy.isAdult(it.name, it.baseUrl) }
         if (adult.isNotEmpty()) dao.deleteByIds(adult.map { it.id })
-        if (!force && dao.enabledOnce().isNotEmpty()) return Result(BootstrapState.Ready)
+        if (!force && dao.enabledOnce().isNotEmpty() &&
+            !SourceFreshness.isStale(dao.lastSyncedAt(), System.currentTimeMillis())
+        ) {
+            return Result(BootstrapState.Ready)
+        }
         val baseUrl = settingsRepository.state.first().activeInstance?.baseUrl
             ?: return Result(BootstrapState.NoSite)
         when (val probe = siteClient.probe(baseUrl)) {
