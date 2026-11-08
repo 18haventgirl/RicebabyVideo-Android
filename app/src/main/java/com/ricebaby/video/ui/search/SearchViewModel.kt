@@ -14,6 +14,7 @@ import com.ricebaby.video.data.sources.SourceBootstrap
 import com.ricebaby.video.net.SiteClient
 import com.ricebaby.video.search.SearchEvent
 import com.ricebaby.video.search.SearchHandle
+import com.ricebaby.video.search.SearchRetryPolicy
 import com.ricebaby.video.search.SearchStreamClient
 import com.ricebaby.video.search.VideoItem
 import com.ricebaby.video.ui.detail.DetailPayload
@@ -75,6 +76,10 @@ class SearchViewModel @Inject constructor(
 
     private val transient = MutableStateFlow(Transient())
     private var handle: SearchHandle? = null
+    private var searchAttempts = 0
+    private var lastBaseUrl = ""
+    private var lastQuery = ""
+    private var lastSources: List<VideoSourceEntity> = emptyList()
 
     init {
         val prefill = savedStateHandle.get<String>("q")
@@ -141,6 +146,10 @@ class SearchViewModel @Inject constructor(
             }
             val sources = prepareSources()
             if (sources.isEmpty()) return@launch
+            searchAttempts = 0
+            lastBaseUrl = instance.baseUrl
+            lastQuery = query
+            lastSources = sources
             handle = streamClient.start(instance.baseUrl, query, sources) { event -> onSearchEvent(event, query) }
         }
     }
@@ -196,7 +205,18 @@ class SearchViewModel @Inject constructor(
                 progress = null,
                 message = if (transient.value.items.isEmpty()) "没有找到相关影片" else null,
             )
-            is SearchEvent.Error -> transient.value = transient.value.copy(phase = SearchPhase.Failed, message = event.message)
+            is SearchEvent.Error -> {
+                val hasResults = transient.value.items.isNotEmpty()
+                if (SearchRetryPolicy.shouldRetry(hasResults, searchAttempts)) {
+                    searchAttempts++
+                    handle = streamClient.start(lastBaseUrl, lastQuery, lastSources) { onSearchEvent(it, lastQuery) }
+                } else {
+                    transient.value = transient.value.copy(
+                        phase = if (hasResults) SearchPhase.Done else SearchPhase.Failed,
+                        message = if (hasResults) "搜索连接中断，已保留现有结果" else event.message,
+                    )
+                }
+            }
         }
     }
 
