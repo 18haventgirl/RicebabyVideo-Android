@@ -86,6 +86,12 @@ fun HomeScreen(
     LaunchedEffect(nearEnd) {
         if (nearEnd && uiState.canLoadMore) viewModel.loadMore()
     }
+    LaunchedEffect(uiState.notice) {
+        uiState.notice?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.consumeNotice()
+        }
+    }
 
     BackHandler(enabled = searching) { searching = false }
 

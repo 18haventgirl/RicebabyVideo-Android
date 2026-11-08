@@ -3,12 +3,17 @@ package com.ricebaby.video.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ricebaby.video.data.db.HistoryDao
+import com.ricebaby.video.data.db.SourceDao
 import com.ricebaby.video.data.douban.DoubanItem
 import com.ricebaby.video.data.douban.DoubanRepository
 import com.ricebaby.video.data.douban.RecommendTagMapper
+import com.ricebaby.video.data.feed.FeedMergePolicy
 import com.ricebaby.video.data.feed.FeedTagRules
 import com.ricebaby.video.data.feed.FeedTagStore
+import com.ricebaby.video.data.feed.RefreshNotice
 import com.ricebaby.video.data.settings.SettingsRepository
+import com.ricebaby.video.data.sources.BootstrapState
+import com.ricebaby.video.data.sources.SourceBootstrap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -35,6 +40,7 @@ data class HomeUiState(
     val loading: Boolean = false,
     val error: String? = null,
     val canLoadMore: Boolean = false,
+    val notice: String? = null,
 )
 
 @HiltViewModel
@@ -43,6 +49,8 @@ class HomeViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val historyDao: HistoryDao,
     private val tagStore: FeedTagStore,
+    private val sourceBootstrap: SourceBootstrap,
+    private val sourceDao: SourceDao,
 ) : ViewModel() {
 
     private data class Internal(
@@ -53,6 +61,7 @@ class HomeViewModel @Inject constructor(
         val pageStart: Int = 0,
         val loading: Boolean = false,
         val error: String? = null,
+        val notice: String? = null,
     )
 
     private val internal = MutableStateFlow(Internal())
@@ -88,6 +97,7 @@ class HomeViewModel @Inject constructor(
             loading = t.loading,
             error = t.error,
             canLoadMore = t.items.isNotEmpty() && t.error == null,
+            notice = t.notice,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -161,27 +171,52 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /** 下拉刷新：标签重新拉一次（缓存也作废），内容按当前标签重新出第一页 */
+    /** 下拉刷新：先重同步资源清单，再重拉标签，最后按当前标签重出第一页；旧内容在新结果落地前不清空 */
     fun refresh() {
         val base = baseUrl ?: return
         val type = if (internal.value.isTv) "tv" else "movie"
         cancelFetch()
         tagsCache.remove("$base|$type")
         viewModelScope.launch {
+            // 同步+标签可能跑几十秒，先把 loading 置真，下拉指示器才不会中途消失
+            internal.value = internal.value.copy(loading = true, error = null)
+            val boot = sourceBootstrap.ensureReady(force = true)
+            val reason = if (boot.state == BootstrapState.Ready) null else boot.detail ?: "资源清单更新失败"
+            val sourceCount = sourceDao.enabledOnce().size
             val serverTags = loadTags(base, type)
-            if (!serverTags.isNullOrEmpty()) internal.value = internal.value.copy(serverTags = serverTags)
+            if (serverTags == null) {
+                refreshContext = null
+                internal.value = internal.value.copy(
+                    loading = false,
+                    notice = RefreshNotice.compose(
+                        reason ?: "站点标签加载失败",
+                        sourceCount,
+                        FeedMergePolicy.decideReplace(internal.value.items, null),
+                        0,
+                    ),
+                )
+                return@launch
+            }
+            internal.value = internal.value.copy(serverTags = serverTags)
             val visible = currentVisibleTags()
             val active = if (internal.value.activeTag in visible) internal.value.activeTag else visible.firstOrNull().orEmpty()
-            internal.value = internal.value.copy(
-                items = emptyList(),
-                activeTag = active,
-                pageStart = 0,
-                loading = true,
-                error = null,
-            )
-            if (active.isNotEmpty()) startFetch(replace = true)
+            refreshContext = RefreshContext(sourceCount, reason)
+            internal.value = internal.value.copy(activeTag = active, pageStart = 0, loading = true, error = null)
+            if (active.isNotEmpty()) {
+                startFetch(replace = true)
+            } else {
+                refreshContext = null
+                internal.value = internal.value.copy(loading = false)
+            }
         }
     }
+
+    fun consumeNotice() {
+        internal.value = internal.value.copy(notice = null)
+    }
+
+    private data class RefreshContext(val sourceCount: Int, val reason: String?)
+    private var refreshContext: RefreshContext? = null
 
     fun retry() {
         val base = baseUrl ?: return
@@ -299,18 +334,40 @@ class HomeViewModel @Inject constructor(
             }
             val fetched = douban.recommend(base, target, type, pageStart)
             if (g != generation) return@launch
-            val merged = if (replace) fetched.orEmpty()
-            else (internal.value.items + fetched.orEmpty()).distinctBy { it.id }
-            internal.value = internal.value.copy(
-                items = merged,
-                pageStart = pageStart,
-                loading = false,
-                error = when {
-                    fetched == null -> "加载失败，点击重试"
-                    merged.isEmpty() -> "这个标签下暂时没有内容"
-                    else -> null
-                },
-            )
+            if (replace) {
+                val old = snapshot.items
+                val decision = FeedMergePolicy.decideReplace(old, fetched)
+                val added = decision.items.count { item -> old.none { it.id == item.id } }
+                val ctx = refreshContext
+                refreshContext = null
+                internal.value = internal.value.copy(
+                    items = decision.items,
+                    pageStart = 0,
+                    loading = false,
+                    error = when {
+                        decision.items.isEmpty() && decision.failed -> "加载失败，点击重试"
+                        decision.items.isEmpty() -> "这个标签下暂时没有内容"
+                        else -> null
+                    },
+                    notice = when {
+                        ctx != null -> RefreshNotice.compose(ctx.reason, ctx.sourceCount, decision, added)
+                        decision.keptOld -> "网络返回不完整，已保留上次内容"
+                        else -> null
+                    },
+                )
+            } else {
+                val merged = (internal.value.items + fetched.orEmpty()).distinctBy { it.id }
+                internal.value = internal.value.copy(
+                    items = merged,
+                    pageStart = pageStart,
+                    loading = false,
+                    error = when {
+                        fetched == null -> "加载失败，点击重试"
+                        merged.isEmpty() -> "这个标签下暂时没有内容"
+                        else -> null
+                    },
+                )
+            }
         }
     }
 }
