@@ -156,6 +156,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M23b | HUD 去掉末端小白点与长按进度条 | `feature/m23b-hud-cleanup` |
 | M24 | 首页标签先行与下拉刷新、播放页详情化、线路两处一致 | `feature/m24-home-detail-polish` |
 | M24b | 搜索进度条化 + 剔除成人采集站（手机报毒修复） | `feature/m25-search-progress` |
+| M25 | 刷新真重同步、结果可见、截断防护、网络韧性、清单保鲜、明文源处置 | `feature/m25-refresh-resilience` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -322,3 +323,12 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 验证：重打包后解包 grep 快照已无命中字符串；模拟器覆盖安装后搜索进度分母 78→73，证明存量清理生效；站点侧订阅清单仍含这 5 条，App 已免疫，Web 端清单待用户自行清理
   - **搜索面板简化**（用户要求）：检索期间不再边搜边抖来源/类型胶囊，改为一条 4dp 圆角进度条（准备阶段不确定态、拿到总数后按 completed/total 推进）+ 一行"正在检索 x/y 个资源"+ 取消；胶囊等 `Done` 后才出现。顺带修好 `SearchPhase.Streaming` 从未被赋值的缺陷——此前整段检索文案卡在"正在准备资源…"、进度数字永不出现，现在 Start/Videos/Progress 三处都会切到 Streaming
   - 环境记一笔：模拟器直连 Pages 函数依旧不通（ping Cloudflare 100% 丢包），M24 收尾清代理后首页报"加载失败"属环境而非回归，恢复 `adb reverse tcp:7890` + 全局代理即恢复；本机直连同一接口实测 1.9s/45s 超时/45s 截断三种结果都有，走代理稳定 1.8s —— 这条抖动列入 M25 的网络韧性项
+- **2026-11-08 M25 完成**（tag `v0.25.0-M25`，75 单测绿）：计划见 `docs/superpowers/plans/2026-11-08-m25-refresh-resilience.md`，六条全部落地
+  - **真刷新**：`HomeViewModel.refresh()` 串行 `ensureReady(force=true)` → 重拉标签 → 当前标签第一页；旧列表在新结果落地前不清空，下拉指示器全程常驻（进 coroutine 先置 loading）
+  - **结果可见**：`HomeUiState.notice` + HomeScreen snackbar 消费；文案由 `RefreshNotice.compose` 判定——成功「资源清单已更新（73 个采集站）· 内容已是最新 / 新增 N 部」、内容残缺「网络返回不完整，已保留上次内容」、失败「刷新失败：原因，已保留上次内容」、清单失败但内容成功「资源清单更新失败：原因 · 内容已是最新」
+  - **截断防护**：`FeedMergePolicy.decideReplace`——请求失败或新列表不足旧列表 1/3 时保留旧列表；切标签/首启因旧列表为空自然走正常替换，不会把别的标签内容 linger
+  - **网络韧性**：`DoubanRepository.get` 失败重试一次（800ms 间隔），readTimeout 15s→30s；SSE 中断由 `SearchRetryPolicy` 判定——无结果重连一次、有结果保留并置 Done 提示「搜索连接中断，已保留现有结果」
+  - **清单保鲜**：`SourceFreshness.isStale` + `SourceDao.lastSyncedAt()`（MAX(updatedAt)，不加字段），冷启动超 24h 自动 force 重同步
+  - **明文源实测**（经代理探测，近似站点服务端视角）：9 源中 8 源 https=200 已升级（feifan/dytt/feifancj/feifan1/guangsu2/lezi2/zuidame/fanhao），xinlang https 超时保留 http，无死源；快照剩余明文 1 条。**站点侧待办**：订阅清单同步把这 8 源改 https；xinlang 的播放链接若为明文仍受 Android 明文限制（已知限制，App 不开全局明文）
+  - 实测截图：`m25-refresh-ok.jpg` / `m25-refresh-recover.jpg`（成功提示 + 海报全程保留）
+  - **验证偏差如实记**：失败态与搜索中断态无法在这台 AVD 上注入——其默认网络是 virtio 以太网，`svc wifi/data disable` 与飞行模式都切不断；`adb reverse --remove` 不会断开已建立的代理/SSE 连接；OkHttp 代理选择器进程内缓存且代理失败会回退直连（直连路由当日已恢复）。这两条路径改由单测锁住（RefreshNotice/FeedMergePolicy 11 条、SearchRetryPolicy 3 条），不在验收里冒充实测
