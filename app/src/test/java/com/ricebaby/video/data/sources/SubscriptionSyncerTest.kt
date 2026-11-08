@@ -19,6 +19,8 @@ class FakeSourceDao : SourceDao {
 
     override fun observeEnabled(): Flow<List<VideoSourceEntity>> = throw UnsupportedOperationException()
     override suspend fun enabledOnce(): List<VideoSourceEntity> = stored.values.toList()
+    override suspend fun allOnce(): List<VideoSourceEntity> = stored.values.toList()
+    override suspend fun deleteByIds(ids: List<String>) { ids.forEach { stored.remove(it) } }
     override fun observeCount(): Flow<Int> = throw UnsupportedOperationException()
     override suspend fun upsertAll(sources: List<VideoSourceEntity>) { sources.forEach { stored[it.id] = it } }
     override suspend fun deleteBySubscription(url: String) { stored.values.removeAll { it.subscriptionUrl == url } }
@@ -57,6 +59,19 @@ class SubscriptionSyncerTest {
     fun `解析 sources 与 list 包装格式`() {
         assertEquals(1, syncer.parseSources("""{"sources":[{"id":"x","name":"X","baseUrl":"https://x.com"}]}""").size)
         assertEquals(1, syncer.parseSources("""{"list":[{"id":"y","name":"Y","baseUrl":"https://y.com"}]}""").size)
+    }
+
+    @Test
+    fun `解析时丢弃成人采集站`() {
+        val raw = """[
+            |{"id":"hsck","name":"黄色仓库","baseUrl":"https://hsckzy.vip/api.php/provide/vod"},
+            |{"id":"xrbsp","name":"淫水机资源站","baseUrl":"https://www.xrbsp.com/api/json.php"},
+            |{"id":"kxgav","name":"白嫖资源站","baseUrl":"https://www.kxgav.com/api/json.php"},
+            |{"id":"pgxdy","name":"黄AV资源站","baseUrl":"https://www.pgxdy.com/api/json.php"},
+            |{"id":"madou","name":"91麻豆","baseUrl":"https://91md.me/api.php/provide/vod"},
+            |{"id":"ff","name":"非凡资源","baseUrl":"http://ffzy5.tv/api.php/provide/vod"}]""".trimMargin()
+        val parsed = syncer.parseSources(raw)
+        assertEquals(listOf("ff"), parsed.map { it.id })
     }
 
     @Test

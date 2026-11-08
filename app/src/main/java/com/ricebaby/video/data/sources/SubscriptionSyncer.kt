@@ -49,6 +49,7 @@ class SubscriptionSyncer @Inject constructor(
             runCatching { json.decodeFromJsonElement(ImportSourceFormat.serializer(), item) }.getOrNull()
         }
             .filter { it.id.isNotBlank() && it.name.isNotBlank() && it.baseUrl.isNotBlank() }
+            .filterNot { SourcePolicy.isAdult(it.name, it.baseUrl) }
             .map {
                 VideoSourceEntity(
                     id = it.id,

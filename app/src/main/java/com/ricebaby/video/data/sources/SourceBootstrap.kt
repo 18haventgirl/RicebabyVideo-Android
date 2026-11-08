@@ -40,6 +40,9 @@ class SourceBootstrap @Inject constructor(
     )
 
     suspend fun ensureReady(force: Boolean = false): Result = mutex.withLock {
+        // 旧版本导入过的成人源要就地清掉，否则它们一直躺在库里参与搜索
+        val adult = dao.allOnce().filter { SourcePolicy.isAdult(it.name, it.baseUrl) }
+        if (adult.isNotEmpty()) dao.deleteByIds(adult.map { it.id })
         if (!force && dao.enabledOnce().isNotEmpty()) return Result(BootstrapState.Ready)
         val baseUrl = settingsRepository.state.first().activeInstance?.baseUrl
             ?: return Result(BootstrapState.NoSite)

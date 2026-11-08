@@ -16,6 +16,12 @@ interface SourceDao {
     @Query("SELECT COUNT(*) FROM video_sources")
     fun observeCount(): Flow<Int>
 
+    @Query("SELECT * FROM video_sources")
+    suspend fun allOnce(): List<VideoSourceEntity>
+
+    @Query("DELETE FROM video_sources WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
+
     @Upsert
     suspend fun upsertAll(sources: List<VideoSourceEntity>)
 
