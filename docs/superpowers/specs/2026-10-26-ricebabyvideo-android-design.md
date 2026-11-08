@@ -155,6 +155,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M23 | 播放器手势重排与进度条对齐 | `feature/m23-player-gestures` |
 | M23b | HUD 去掉末端小白点与长按进度条 | `feature/m23b-hud-cleanup` |
 | M24 | 首页标签先行与下拉刷新、播放页详情化、线路两处一致 | `feature/m24-home-detail-polish` |
+| M24b | 搜索进度条化 + 剔除成人采集站（手机报毒修复） | `feature/m25-search-progress` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -315,3 +316,9 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **胶囊行距**：`ChipRows` 纵向间距 4dp→2dp（横向仍 4dp），折叠行数换算同步改用新常量
   - **首页下拉刷新与收紧**：网格套 M3 `PullToRefreshBox`（1.4.0 已是稳定 API），`HomeViewModel.refresh()` 作废标签缓存、重拉标签与当前标签第一页；搜索框上下 16/16→12/8、标签行 16/16→8/12、网格纵向 24→12。实测下拉出现刷新指示器且内容正常重载
   - 截图重拍：01-home / 02-search / 04-player
+- **2026-11-08 M24b 完成**（tag `v0.24.1-M24b`，55 单测绿）：用户手机装包报"黄毒" + 搜索面板简化
+  - **报毒根因是内容命中而非行为**：包内权限只有 INTERNET/ACCESS_NETWORK_STATE/WAKE_LOCK，无 WebView、无敏感权限、native 库仅 androidx 官方两个；但 `assets/sources-snapshot.json` 明文带着 5 个成人采集站（黄色仓库 hsckzy.vip / 淫水机 xrbsp.com / 白嫖 kxgav.com / 黄AV pgxdy.com / 91麻豆 91md.me），名字与域名都在厂商色情 URL 库里，扫 APK 内嵌字符串即命中 → 整包判涉黄
+  - 修法三处共用一条判定 `data/sources/SourcePolicy`（名称关键词 + 域名 token）：① `SubscriptionSyncer.parseSources` 导入即过滤（订阅与快照两条路都汇到这里）；② `SourceBootstrap.ensureReady` 开头就地删掉旧版本已导入的行（新增 `SourceDao.allOnce/deleteByIds`），覆盖安装不用清数据；③ 快照剔除 5 条，78→73。单测 6 条覆盖"成人全命中 / 正常站不误伤 / 域名带关键词但名字正常 / 非法 URL 不抛"
+  - 验证：重打包后解包 grep 快照已无命中字符串；模拟器覆盖安装后搜索进度分母 78→73，证明存量清理生效；站点侧订阅清单仍含这 5 条，App 已免疫，Web 端清单待用户自行清理
+  - **搜索面板简化**（用户要求）：检索期间不再边搜边抖来源/类型胶囊，改为一条 4dp 圆角进度条（准备阶段不确定态、拿到总数后按 completed/total 推进）+ 一行"正在检索 x/y 个资源"+ 取消；胶囊等 `Done` 后才出现。顺带修好 `SearchPhase.Streaming` 从未被赋值的缺陷——此前整段检索文案卡在"正在准备资源…"、进度数字永不出现，现在 Start/Videos/Progress 三处都会切到 Streaming
+  - 环境记一笔：模拟器直连 Pages 函数依旧不通（ping Cloudflare 100% 丢包），M24 收尾清代理后首页报"加载失败"属环境而非回归，恢复 `adb reverse tcp:7890` + 全局代理即恢复；本机直连同一接口实测 1.9s/45s 超时/45s 截断三种结果都有，走代理稳定 1.8s —— 这条抖动列入 M25 的网络韧性项
