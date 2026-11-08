@@ -172,7 +172,7 @@ fun SearchPanel(
             VGap(Dimens.md)
         }
 
-        if (uiState.phase !in busyPhases && (uiState.sourceCounts.isNotEmpty() || uiState.typeCounts.isNotEmpty())) {
+        if (uiState.phase !in busyPhases && uiState.typeCounts.isNotEmpty()) {
             FlowRow(
                 maxLines = if (filtersExpanded) Int.MAX_VALUE else 2,
                 horizontalArrangement = Arrangement.spacedBy(Dimens.xs),
@@ -180,25 +180,14 @@ fun SearchPanel(
                 itemVerticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = Dimens.screen),
             ) {
-                // 不截断：与详情页「线路」同一批采集站，两处数量必须一致
-                if (uiState.sourceCounts.isNotEmpty()) {
-                    FilterCaption("线路")
-                    uiState.sourceCounts.forEach { badge ->
-                        FilterPill(
-                            text = "${badge.displayName} ${badge.count}",
-                            selected = badge.sourceId in uiState.selectedSources,
-                        ) { viewModel.toggleSourceFilter(badge.sourceId) }
+                // 来源不再做胶囊：每张结果卡片自带资源名，重复一排只是占地方
+                FilterCaption("类型")
+                uiState.typeCounts.forEach { (name, count) ->
+                    FilterPill(text = "$name $count", selected = name in uiState.selectedTypes) {
+                        viewModel.toggleTypeFilter(name)
                     }
                 }
-                if (uiState.typeCounts.isNotEmpty()) {
-                    FilterCaption("类型")
-                    uiState.typeCounts.forEach { (name, count) ->
-                        FilterPill(text = "$name $count", selected = name in uiState.selectedTypes) {
-                            viewModel.toggleTypeFilter(name)
-                        }
-                    }
-                }
-                if (uiState.selectedSources.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) {
+                if (uiState.selectedTypes.isNotEmpty()) {
                     FilterPill(text = "清除筛选", selected = false, onClick = viewModel::clearFilters)
                 }
             }

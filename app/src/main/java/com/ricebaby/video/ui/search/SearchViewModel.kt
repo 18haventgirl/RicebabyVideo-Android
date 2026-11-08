@@ -34,17 +34,13 @@ import kotlinx.coroutines.launch
 
 enum class SearchPhase { Idle, Preparing, Streaming, Done, Failed }
 
-data class SourceBadge(val displayName: String, val sourceId: String, val count: Int)
-
 data class ScoredVideo(val item: VideoItem, val key: String, val score: Int)
 
 data class SearchUiState(
     val query: String = "",
     val phase: SearchPhase = SearchPhase.Idle,
     val results: List<ScoredVideo> = emptyList(),
-    val sourceCounts: List<SourceBadge> = emptyList(),
     val typeCounts: List<Pair<String, Int>> = emptyList(),
-    val selectedSources: Set<String> = emptySet(),
     val selectedTypes: Set<String> = emptySet(),
     val history: List<String> = emptyList(),
     val favoriteKeys: Set<String> = emptySet(),
@@ -68,7 +64,6 @@ class SearchViewModel @Inject constructor(
         val query: String = "",
         val phase: SearchPhase = SearchPhase.Idle,
         val items: Map<String, ScoredVideo> = emptyMap(),
-        val selectedSources: Set<String> = emptySet(),
         val selectedTypes: Set<String> = emptySet(),
         val progress: Pair<Int, Int>? = null,
         val message: String? = null,
@@ -95,31 +90,17 @@ class SearchViewModel @Inject constructor(
         transient,
     ) { history, favorites, t ->
         val visible = t.items.values
-            .filter { t.selectedSources.isEmpty() || it.item.source in t.selectedSources }
             .filter { t.selectedTypes.isEmpty() || (it.item.typeName ?: "未分类") in t.selectedTypes }
             .sortedWith(compareByDescending<ScoredVideo> { it.score }.thenBy { it.item.latency ?: Long.MAX_VALUE })
         SearchUiState(
             query = t.query,
             phase = t.phase,
             results = visible,
-            sourceCounts = t.items.values
-                .groupingBy { it.item.source }
-                .eachCount()
-                .map { (sourceId, count) ->
-                    SourceBadge(
-                        displayName = t.items.values.first { it.item.source == sourceId }.item.sourceDisplayName ?: sourceId,
-                        sourceId = sourceId,
-                        count = count,
-                    )
-                }
-                // 与详情页线路同一排序规则，两处看到的顺序与数量才一致
-                .sortedBy { it.displayName },
             typeCounts = t.items.values
                 .groupingBy { it.item.typeName ?: "未分类" }
                 .eachCount()
                 .toList()
                 .sortedByDescending { it.second },
-            selectedSources = t.selectedSources,
             selectedTypes = t.selectedTypes,
             history = history.map { it.query },
             favoriteKeys = favorites.map { "${it.source}:${it.vodId}" }.toSet(),
@@ -226,13 +207,6 @@ class SearchViewModel @Inject constructor(
         transient.value = transient.value.copy(phase = SearchPhase.Done, progress = null)
     }
 
-    fun toggleSourceFilter(sourceId: String) {
-        val current = transient.value.selectedSources
-        transient.value = transient.value.copy(
-            selectedSources = if (sourceId in current) current - sourceId else current + sourceId,
-        )
-    }
-
     fun toggleTypeFilter(type: String) {
         val current = transient.value.selectedTypes
         transient.value = transient.value.copy(
@@ -241,7 +215,7 @@ class SearchViewModel @Inject constructor(
     }
 
     fun clearFilters() {
-        transient.value = transient.value.copy(selectedSources = emptySet(), selectedTypes = emptySet())
+        transient.value = transient.value.copy(selectedTypes = emptySet())
     }
 
     fun toggleFavorite(video: VideoItem) {
