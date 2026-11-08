@@ -2,6 +2,7 @@ package com.ricebaby.video.data.douban
 
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -58,12 +59,22 @@ class DoubanRepository @Inject constructor(
         }
 
     private suspend fun <T> get(url: String, parse: (String) -> T): T? = withContext(Dispatchers.IO) {
-        runCatching {
-            val request = Request.Builder().url(url).header("Accept", "application/json").build()
-            http.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@use null
-                parse(response.body?.string().orEmpty())
-            }
-        }.getOrNull()
+        val request = Request.Builder().url(url).header("Accept", "application/json").build()
+        // 国内到 Pages 函数的路由会间歇性挂死或截断，单次请求等于把抖动直接甩给用户
+        repeat(2) { attempt ->
+            val result = runCatching {
+                http.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@use null
+                    parse(response.body?.string().orEmpty())
+                }
+            }.getOrNull()
+            if (result != null) return@withContext result
+            if (attempt == 0) delay(RETRY_DELAY_MS)
+        }
+        null
+    }
+
+    private companion object {
+        const val RETRY_DELAY_MS = 800L
     }
 }

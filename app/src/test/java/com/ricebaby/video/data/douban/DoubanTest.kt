@@ -58,7 +58,32 @@ class DoubanTest {
     @Test
     fun `请求失败返回 null 以便与空结果区分`() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(500))
+        server.enqueue(MockResponse().setResponseCode(500))
         assertNull(repo().recommend(server.url("/").toString().removeSuffix("/"), "热门", "movie", 0))
+    }
+
+    @Test
+    fun `首次失败自动重试一次并成功`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(503))
+        server.enqueue(MockResponse().setBody("""{"tags":["热门"]}"""))
+        val tags = repo().tags(server.url("/").toString().removeSuffix("/"), "movie")
+        assertEquals(listOf("热门"), tags)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `两次都失败才返回 null`() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(500))
+        server.enqueue(MockResponse().setResponseCode(500))
+        assertNull(repo().tags(server.url("/").toString().removeSuffix("/"), "movie"))
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `成功时不重试`() = runBlocking {
+        server.enqueue(MockResponse().setBody("""{"tags":["热门"]}"""))
+        assertEquals(listOf("热门"), repo().tags(server.url("/").toString().removeSuffix("/"), "movie"))
+        assertEquals(1, server.requestCount)
     }
 
     @Test
