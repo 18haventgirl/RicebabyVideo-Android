@@ -2,7 +2,7 @@
     {
         "id": "feifan",
         "name": "非凡资源",
-        "baseUrl": "http://ffzy5.tv/api.php/provide/vod",
+        "baseUrl": "https://ffzy5.tv/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 1
@@ -82,7 +82,7 @@
     {
         "id": "dytt",
         "name": "电影天堂",
-        "baseUrl": "http://caiji.dyttzyapi.com/api.php/provide/vod",
+        "baseUrl": "https://caiji.dyttzyapi.com/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 11
@@ -202,7 +202,7 @@
     {
         "id": "feifancj",
         "name": "非凡采集",
-        "baseUrl": "http://cj.ffzyapi.com/api.php/provide/vod",
+        "baseUrl": "https://cj.ffzyapi.com/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 26
@@ -218,7 +218,7 @@
     {
         "id": "feifan1",
         "name": "非凡线路1",
-        "baseUrl": "http://ffzy1.tv/api.php/provide/vod",
+        "baseUrl": "https://ffzy1.tv/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 28
@@ -258,7 +258,7 @@
     {
         "id": "guangsu2",
         "name": "光速HTTP",
-        "baseUrl": "http://api.guangsuapi.com/api.php/provide/vod",
+        "baseUrl": "https://api.guangsuapi.com/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 33
@@ -282,7 +282,7 @@
     {
         "id": "lezi2",
         "name": "乐子HTTP",
-        "baseUrl": "http://cj.lziapi.com/api.php/provide/vod",
+        "baseUrl": "https://cj.lziapi.com/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 36
@@ -338,7 +338,7 @@
     {
         "id": "zuidame",
         "name": "最大点播",
-        "baseUrl": "http://zuidazy.me/api.php/provide/vod",
+        "baseUrl": "https://zuidazy.me/api.php/provide/vod",
         "group": "normal",
         "enabled": true,
         "priority": 43
@@ -546,7 +546,7 @@
     {
         "id": "fanhao",
         "name": "番号资源",
-        "baseUrl": "http://fhapi9.com/api.php/provide/vod",
+        "baseUrl": "https://fhapi9.com/api.php/provide/vod",
         "group": "premium",
         "enabled": true,
         "priority": 18
