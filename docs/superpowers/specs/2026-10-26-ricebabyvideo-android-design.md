@@ -157,6 +157,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M24 | 首页标签先行与下拉刷新、播放页详情化、线路两处一致 | `feature/m24-home-detail-polish` |
 | M24b | 搜索进度条化 + 剔除成人采集站（手机报毒修复） | `feature/m25-search-progress` |
 | M25 | 刷新真重同步、结果可见、截断防护、网络韧性、清单保鲜、明文源处置 | `feature/m25-refresh-resilience` |
+| M25b | 搜索完成后去掉线路胶囊（卡片自带资源名） | `feature/m25b-search-chips` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -332,3 +333,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - **明文源实测**（经代理探测，近似站点服务端视角）：9 源中 8 源 https=200 已升级（feifan/dytt/feifancj/feifan1/guangsu2/lezi2/zuidame/fanhao），xinlang https 超时保留 http，无死源；快照剩余明文 1 条。**站点侧待办**：订阅清单同步把这 8 源改 https；xinlang 的播放链接若为明文仍受 Android 明文限制（已知限制，App 不开全局明文）
   - 实测截图：`m25-refresh-ok.jpg` / `m25-refresh-recover.jpg`（成功提示 + 海报全程保留）
   - **验证偏差如实记**：失败态与搜索中断态无法在这台 AVD 上注入——其默认网络是 virtio 以太网，`svc wifi/data disable` 与飞行模式都切不断；`adb reverse --remove` 不会断开已建立的代理/SSE 连接；OkHttp 代理选择器进程内缓存且代理失败会回退直连（直连路由当日已恢复）。这两条路径改由单测锁住（RefreshNotice/FeedMergePolicy 11 条、SearchRetryPolicy 3 条），不在验收里冒充实测
+- **2026-11-08 M25b 完成**（tag `v0.25.1-M25b`，75 单测绿）：用户复核 M25 后要求去掉搜索完成后的线路胶囊
+  - 理由成立：每张结果卡片副标题自带资源名（如「非凡资源 · 2025 · 剧情片」），再排一排来源胶囊是重复信息。删除线路组及其死代码（`SourceBadge / sourceCounts / selectedSources / toggleSourceFilter`）；**类型筛选保留**（是过滤功能而非重复信息）
+  - 实测截图 `m25b-done.jpg`：完成后仅「类型 剧情片 31 / 日本剧 4 / 电影解说 3」+ 展开全部筛选
+  - **产品决定（用户明确）：换线后从当前集开头播、不继承换线前秒数，不视为 bug，不修。** 现有三条自动换源路径保持不变：位置停住 25s 的卡顿看门狗、播放报错 1.2s 后顺延、起播解析失败最多顺延 6 条
