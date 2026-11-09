@@ -33,8 +33,8 @@ import com.ricebaby.video.ui.theme.Dimens
 /** M3 胶囊的固定高度，用来估算折叠后实际占了几行 */
 private val ChipHeight = 32.dp
 
-/** 行间距比列间距更紧：4dp 时两行胶囊看起来像断开了 */
-private val ChipVerticalGap = 2.dp
+/** 行间距与列间距统一 4dp：胶囊本身已无触控死带，再留空白就散了 */
+private val ChipVerticalGap = 4.dp
 
 /**
  * 线路选择：详情页与播放页共用。默认只展示两行，超出部分由用户主动展开，
