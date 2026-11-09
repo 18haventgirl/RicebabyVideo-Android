@@ -158,6 +158,7 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
 | M24b | 搜索进度条化 + 剔除成人采集站（手机报毒修复） | `feature/m25-search-progress` |
 | M25 | 刷新真重同步、结果可见、截断防护、网络韧性、清单保鲜、明文源处置 | `feature/m25-refresh-resilience` |
 | M25b | 搜索完成后去掉线路胶囊（卡片自带资源名） | `feature/m25b-search-chips` |
+| M26 | 胶囊行距收紧（触控盒死带）+ 搜索结果分档内按延迟排序 | `feature/m26-chip-density` |
 
 > M0–M6 的计划文档见 `docs/superpowers/plans/`；M7 起按用户"不再逐项确认"的授权直接以里程碑分支推进，验收记录落在本文档末尾。
 > M3/M5 交付物已在 M8、M9 分别删除（WebView 播放器与同步桥、IPTV 直播），表中保留仅作历史脉络。
@@ -337,3 +338,8 @@ RicebabyVideo（`18haventgirl/Ricebaby_Video`）是基于 Next.js 16 + React 19 
   - 理由成立：每张结果卡片副标题自带资源名（如「非凡资源 · 2025 · 剧情片」），再排一排来源胶囊是重复信息。删除线路组及其死代码（`SourceBadge / sourceCounts / selectedSources / toggleSourceFilter`）；**类型筛选保留**（是过滤功能而非重复信息）
   - 实测截图 `m25b-done.jpg`：完成后仅「类型 剧情片 31 / 日本剧 4 / 电影解说 3」+ 展开全部筛选
   - **产品决定（用户明确）：换线后从当前集开头播、不继承换线前秒数，不视为 bug，不修。** 现有三条自动换源路径保持不变：位置停住 25s 的卡顿看门狗、播放报错 1.2s 后顺延、起播解析失败最多顺延 6 条
+- **2026-11-09 M26 完成**（tag `v0.26.0-M26`，80 单测绿）：用户提的两条改进
+  - **胶囊行距根因不是间距参数**：M24 把行间距 4dp→2dp 看不出效果，因为 M3 `FilterChip` 默认套 48dp 最小触控盒——胶囊视觉 32dp，外面多 16dp 透明死带。实测首页标签行距 131px（50dp）、两排胶囊间纯背景留白 47px（18dp）。改法：`SelectChip` 内 `LocalMinimumInteractiveComponentSize provides Dp.Unspecified` 关掉扩展 + 行间距与列间距统一 4dp。复测行距 95px（36dp）、视觉留白 11px（4dp），见 `.debug-ui/gap-fixed.jpg`。共用组件一处改，首页标签/搜索类型/详情线路/选集全部收紧。代价：点按高度回到 32dp（M3 的 48dp 只是扩展建议），胶囊够宽实测可点
+  - **延迟排序采用分档 + 档内延迟，不做线性加权**：`search/Ranking.kt` 的 `RankKey(tier, latency, score)`，档阈值对齐 relevanceScore 台阶（≥1000 精确 / ≥500 前缀 / ≥200 包含 / 其余），跨档永远不比延迟，档内延迟升序、null 排本档末尾、同延迟再比分数。理由：延迟是源的属性不是影片的属性，线性混分会让"名字只沾边的快源"压过"完全同名的慢源"
+  - 实施前先探了真实 SSE：42 条结果 **100% 带 latency**（240–372ms，按源恒定），故 null 仅作防御性兜底；全源探针对"黑球"精确同名结果的延迟序为 最大 200 / 暴风 373 / 极速 374 / 无尽 407…，模拟器首屏顺序与之一致（跨 run 延迟有波动，规则由 5 条单测锁死：档边界、跨档不反超、档内快源在前、同延迟比分数、null 到末尾）
+  - 不做用户可见的"延迟测试"入口（设置页已删、整体傻瓜化），延迟只作用于排序
