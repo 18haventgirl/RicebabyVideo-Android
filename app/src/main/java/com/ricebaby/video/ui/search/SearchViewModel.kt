@@ -12,6 +12,7 @@ import com.ricebaby.video.data.settings.SettingsRepository
 import com.ricebaby.video.data.sources.BootstrapState
 import com.ricebaby.video.data.sources.SourceBootstrap
 import com.ricebaby.video.net.SiteClient
+import com.ricebaby.video.search.Ranking
 import com.ricebaby.video.search.SearchEvent
 import com.ricebaby.video.search.SearchHandle
 import com.ricebaby.video.search.SearchRetryPolicy
@@ -91,7 +92,7 @@ class SearchViewModel @Inject constructor(
     ) { history, favorites, t ->
         val visible = t.items.values
             .filter { t.selectedTypes.isEmpty() || (it.item.typeName ?: "未分类") in t.selectedTypes }
-            .sortedWith(compareByDescending<ScoredVideo> { it.score }.thenBy { it.item.latency ?: Long.MAX_VALUE })
+            .sortedBy { Ranking.key(it.score, it.item.latency) }
         SearchUiState(
             query = t.query,
             phase = t.phase,
